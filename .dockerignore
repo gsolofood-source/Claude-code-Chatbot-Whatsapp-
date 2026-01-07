@@ -1,0 +1,44 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Environment files (will be set via Railway env vars)
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test files
+test
+tests
+*.test.js
+*.spec.js
+
+# Coverage
+coverage
+.nyc_output
+
+# Build artifacts
+dist
+build
