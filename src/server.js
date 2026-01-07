@@ -15,7 +15,12 @@ try {
   logger.info('Configuration validated successfully');
 } catch (error) {
   logger.error('Configuration validation failed:', error.message);
-  process.exit(1);
+  // In production/Railway, log warning but don't exit
+  if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+    logger.warn('Running in production with incomplete configuration - some features may not work');
+  } else {
+    process.exit(1);
+  }
 }
 
 // Crea cartella logs se non esiste
@@ -26,6 +31,11 @@ if (!fs.existsSync(logsDir)) {
 
 // Inizializza Express
 const app = express();
+
+// Healthcheck endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
 
 // Middleware - Salva raw body per verifica firma webhook
 app.use(express.json({
@@ -60,7 +70,7 @@ app.use((req, res) => {
 });
 
 // Avvio server
-const PORT = config.port;
+const PORT = process.env.PORT || config.port || 3000;
 
 app.listen(PORT, () => {
   logger.info(`🚀 WhatsApp Joe Bastianich Bot started on port ${PORT}`);
