@@ -17,13 +17,23 @@ router.get('/', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  logger.info('Webhook verification request received');
+  logger.info('Webhook verification request received', {
+    mode,
+    token_provided: !!token,
+    challenge_provided: !!challenge
+  });
 
-  if (mode === 'subscribe' && token === config.whatsapp.verifyToken) {
+  // Usa direttamente process.env per essere indipendente da config
+  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || config.whatsapp.verifyToken;
+
+  if (mode === 'subscribe' && token === verifyToken) {
     logger.info('Webhook verified successfully');
     res.status(200).send(challenge);
   } else {
-    logger.warn('Webhook verification failed');
+    logger.warn('Webhook verification failed', {
+      expected_token: verifyToken ? 'set' : 'missing',
+      received_token: token
+    });
     res.sendStatus(403);
   }
 });
