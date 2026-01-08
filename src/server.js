@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { config, validateConfig } from './config/index.js';
 import routes from './routes/index.js';
 import logger from './utils/logger.js';
@@ -31,6 +32,18 @@ if (!fs.existsSync(logsDir)) {
 
 // Inizializza Express
 const app = express();
+
+// CORS - Allow dashboard to connect
+app.use(cors({
+  origin: [
+    'http://localhost:3001',
+    'http://localhost:3000',
+    /\.railway\.app$/,
+    /\.vercel\.app$/,
+    /^http:\/\/21\.0\.0\.\d+:\d+$/  // Allow local network IPs
+  ],
+  credentials: true
+}));
 
 // Healthcheck endpoint for Railway
 app.get('/health', (req, res) => {
