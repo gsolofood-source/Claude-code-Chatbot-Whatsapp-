@@ -3,9 +3,12 @@ import { mockConversations, mockConversationMessages } from "@/lib/mock-data";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const conversation = mockConversations.find((c) => c.id === params.id);
+  // In Next.js 15, params is a Promise and must be awaited
+  const { id } = await params;
+
+  const conversation = mockConversations.find((c) => c.id === id);
 
   if (!conversation) {
     return NextResponse.json(
@@ -14,7 +17,7 @@ export async function GET(
     );
   }
 
-  const messages = mockConversationMessages[params.id as keyof typeof mockConversationMessages] || [];
+  const messages = mockConversationMessages[id as keyof typeof mockConversationMessages] || [];
 
   return NextResponse.json({
     conversation,
