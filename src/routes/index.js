@@ -2,12 +2,16 @@ import express from 'express';
 import webhookRouter from './webhook.js';
 import callsRouter from './calls.js';
 import conversationsRouter from './conversations.js';
+import elevenlabsWebhookRouter from './elevenlabsWebhook.js';
 import conversationManager from '../services/conversationManager.js';
 
 const router = express.Router();
 
 // Webhook di WhatsApp
 router.use('/webhook', webhookRouter);
+
+// Webhook di ElevenLabs
+router.use('/webhook/elevenlabs', elevenlabsWebhookRouter);
 
 // Voice calls API
 router.use('/calls', callsRouter);
