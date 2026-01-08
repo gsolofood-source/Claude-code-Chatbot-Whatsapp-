@@ -1,14 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { mockConversations, mockConversationMessages } from "@/lib/mock-data";
 
-type RouteContext = {
-  params: {
-    id: string;
-  };
-};
-
-export async function GET(request: NextRequest, context: RouteContext) {
-  const { id } = context.params;
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
 
   const conversation = mockConversations.find((c) => c.id === id);
 
