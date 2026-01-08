@@ -16,10 +16,10 @@ interface Conversation {
   userName: string;
   lastMessage: string;
   timestamp: string;
-  status: string;
+  status: "active" | "completed";  // ← cambia da string
   unread: boolean;
   messageCount: number;
-  type: string;
+  type: "text" | "audio";          // ← cambia da string
 }
 
 interface Message {
