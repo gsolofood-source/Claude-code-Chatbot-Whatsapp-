@@ -21,16 +21,29 @@ class MessageHandler {
       const conversation = conversationManager.getConversation(from);
 
       let userMessage = '';
-      let isAudioInput = false;
 
-      // Estrai il contenuto del messaggio
+      // ========================================
+      // GESTIONE MESSAGGI TESTUALI
+      // ========================================
       if (type === 'text') {
         userMessage = text.body;
-        isAudioInput = false;
-      } else if (type === 'audio') {
-        // Gestisci messaggio audio
-        isAudioInput = true;
 
+        // SOLO LOGGING - ElevenLabs risponderà
+        conversationManager.addMessage(from, {
+          role: 'user',
+          content: userMessage,
+          messageId,
+          type: 'text'
+        });
+
+        logger.info(`Text message logged for ${from}, ElevenLabs will respond`);
+        return; // RETURN IMMEDIATO, non generare risposta
+      }
+
+      // ========================================
+      // GESTIONE MESSAGGI AUDIO
+      // ========================================
+      else if (type === 'audio') {
         try {
           logger.info(`Processing audio message, media ID: ${audio.id}`);
 
@@ -38,9 +51,20 @@ class MessageHandler {
           const audioBuffer = await whatsappService.downloadMedia(audio.id);
           logger.debug(`Audio downloaded, size: ${audioBuffer.length} bytes`);
 
-          // 2. Trascrivi con Whisper
+          // 2. Trascrivi con Whisper (per logging)
           userMessage = await openaiService.transcribeAudio(audioBuffer, 'audio.ogg');
           logger.info(`Audio transcribed: "${userMessage.substring(0, 50)}..."`);
+
+          // SOLO LOGGING - ElevenLabs risponderà
+          conversationManager.addMessage(from, {
+            role: 'user',
+            content: userMessage,
+            messageId,
+            type: 'audio'
+          });
+
+          logger.info(`Audio message logged for ${from}, ElevenLabs will respond`);
+          return; // RETURN IMMEDIATO, non generare risposta
 
         } catch (error) {
           logger.error('Error processing audio:', error);
@@ -50,8 +74,13 @@ class MessageHandler {
           );
           return;
         }
-      } else if (type === 'image') {
-        // Gestisci messaggio immagine
+      }
+
+      // ========================================
+      // GESTIONE IMMAGINI (MANTIENI FLUSSO COMPLETO)
+      // ========================================
+      else if (type === 'image') {
+        // ElevenLabs NON gestisce immagini, quindi il backend risponde
         try {
           logger.info(`Processing image message, media ID: ${image.id}`);
 
@@ -63,12 +92,26 @@ class MessageHandler {
           const imageAnalysis = await openaiService.analyzeImage(imageBuffer);
           logger.info(`Image analyzed: "${imageAnalysis.substring(0, 50)}..."`);
 
-          // 3. Invia subito il feedback
+          // 3. Logga la domanda utente
+          conversationManager.addMessage(from, {
+            role: 'user',
+            content: '[Image sent]',
+            messageId,
+            type: 'image'
+          });
+
+          // 4. Logga la risposta assistant
+          conversationManager.addMessage(from, {
+            role: 'assistant',
+            content: imageAnalysis,
+            type: 'text'
+          });
+
+          // 5. Invia il feedback all'utente
           await whatsappService.sendTextMessage(from, imageAnalysis);
           logger.info(`Image analysis sent to ${from}`);
 
-          // Non procedere oltre, abbiamo già risposto
-          return;
+          return; // Flusso completato
 
         } catch (error) {
           logger.error('Error processing image:', error);
@@ -78,61 +121,22 @@ class MessageHandler {
           );
           return;
         }
-      } else {
-        // Tipo di messaggio non supportato
+      }
+
+      // ========================================
+      // TIPO NON SUPPORTATO
+      // ========================================
+      else {
         logger.warn(`Unsupported message type: ${type}`);
         return;
-      }
-
-      // Aggiungi il messaggio alla conversazione
-      conversationManager.addMessage(from, {
-        role: 'user',
-        content: userMessage,
-        messageId
-      });
-
-      // Mostra typing indicator immediatamente per feedback UX
-      await whatsappService.showTypingIndicator(from, messageId);
-
-      // Genera la risposta (audio o testo in base all'input)
-      const response = await this.getAgentResponse(from, userMessage, conversation.sessionId, isAudioInput);
-
-      // Aggiorna la session ID se è nuova
-      if (response.sessionId) {
-        conversationManager.updateSessionId(from, response.sessionId);
-      }
-
-      // Aggiungi la risposta alla conversazione
-      conversationManager.addMessage(from, {
-        role: 'assistant',
-        content: response.text
-      });
-
-      // Logica di risposta:
-      // - Se input è testo → risposta testuale
-      // - Se input è audio → risposta audio
-      if (isAudioInput && response.audioBuffer) {
-        // Invia l'audio (MP3 da ElevenLabs)
-        await whatsappService.sendAudioMessage(from, response.audioBuffer);
-        logger.info(`Audio response sent to ${from}`);
-      } else {
-        // Invia solo il testo
-        await whatsappService.sendTextMessage(from, response.text);
-        logger.info(`Text response sent to ${from}`);
       }
 
     } catch (error) {
       logger.error('Error handling incoming message:', error);
 
-      // Invia un messaggio di errore all'utente
-      try {
-        await whatsappService.sendTextMessage(
-          messageData.from,
-          "Mi dispiace, c'è stato un problema. Riprova tra poco."
-        );
-      } catch (sendError) {
-        logger.error('Error sending error message:', sendError);
-      }
+      // Non inviare messaggio di errore per text/audio per evitare conflitti con ElevenLabs
+      // ElevenLabs gestirà la risposta all'utente
+      logger.error('Message processing failed, no error message sent to avoid conflicts with ElevenLabs');
     }
   }
 
