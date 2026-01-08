@@ -9,17 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Filter, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { Conversation, ConversationStatus, ConversationType } from "@/lib/types/conversation";
 
-interface Conversation {
-  id: string;
-  userId: string;
-  userName: string;
-  lastMessage: string;
-  timestamp: string;
-  status: string;
-  unread: boolean;
-  messageCount: number;
-  type: string;
+// Helper functions to normalize API data to union types
+function toStatus(s: string): ConversationStatus {
+  return s === "active" || s === "completed" ? s : "active";
+}
+
+function toType(t: string): ConversationType {
+  return t === "text" || t === "audio" ? t : "text";
 }
 
 interface Message {
@@ -52,7 +50,15 @@ export default function ConversationsPage() {
     try {
       const response = await fetch("/api/conversations");
       const data = await response.json();
-      setConversations(data.conversations || []);
+
+      // Normalize API data to match union types
+      const normalized: Conversation[] = (data.conversations || []).map((conv: any) => ({
+        ...conv,
+        status: toStatus(conv.status),
+        type: toType(conv.type),
+      }));
+
+      setConversations(normalized);
     } catch (error) {
       console.error("Error fetching conversations:", error);
       setConversations([]);

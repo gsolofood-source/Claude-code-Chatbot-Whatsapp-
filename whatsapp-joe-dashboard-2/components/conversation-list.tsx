@@ -4,18 +4,7 @@ import { Card } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import { MessageSquare, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Conversation {
-  id: string;
-  userId: string;
-  userName: string;
-  lastMessage: string;
-  timestamp: string;
-  status: "active" | "completed";
-  unread: boolean;
-  messageCount: number;
-  type: "text" | "audio";
-}
+import type { Conversation } from "@/lib/types/conversation";
 
 interface ConversationListProps {
   conversations: Conversation[];
