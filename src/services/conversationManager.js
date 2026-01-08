@@ -1,6 +1,7 @@
 import NodeCache from 'node-cache';
 import { config } from '../config/index.js';
 import logger from '../utils/logger.js';
+import chatLogService from './chatLogService.js';
 
 class ConversationManager {
   constructor() {
@@ -54,10 +55,20 @@ class ConversationManager {
   addMessage(userId, message) {
     const conversation = this.getConversation(userId);
 
-    conversation.messages.push({
+    const messageWithTimestamp = {
       ...message,
       timestamp: new Date()
-    });
+    };
+
+    conversation.messages.push(messageWithTimestamp);
+
+    // Salva il messaggio nel log persistente
+    try {
+      chatLogService.logMessage(userId, messageWithTimestamp, message.type || 'text');
+    } catch (error) {
+      logger.error('Failed to log message persistently:', error);
+      // Continua anche se il logging fallisce
+    }
 
     // Mantieni solo gli ultimi N messaggi
     if (conversation.messages.length > config.conversation.maxMessagesInContext) {
