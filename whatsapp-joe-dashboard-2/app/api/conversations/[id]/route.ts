@@ -1,11 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { mockConversations, mockConversationMessages } from "@/lib/mock-data";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const conversation = mockConversations.find((c) => c.id === params.id);
+type RouteContext = {
+  params: {
+    id: string;
+  };
+};
+
+export async function GET(request: NextRequest, context: RouteContext) {
+  const { id } = context.params;
+
+  const conversation = mockConversations.find((c) => c.id === id);
 
   if (!conversation) {
     return NextResponse.json(
@@ -14,7 +19,8 @@ export async function GET(
     );
   }
 
-  const messages = mockConversationMessages[params.id as keyof typeof mockConversationMessages] || [];
+  const messages =
+    mockConversationMessages[id as keyof typeof mockConversationMessages] || [];
 
   return NextResponse.json({
     conversation,
