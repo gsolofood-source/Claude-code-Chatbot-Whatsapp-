@@ -17,21 +17,14 @@ class MessageHandler {
       // Marca il messaggio come letto
       await whatsappService.markAsRead(messageId);
 
-      // Ottieni la conversazione dell'utente
-      const conversation = conversationManager.getConversation(from);
-
-      let userMessage = '';
-
       // ========================================
       // GESTIONE MESSAGGI TESTUALI
       // ========================================
       if (type === 'text') {
-        userMessage = text.body;
-
         // SOLO LOGGING - ElevenLabs risponderà
         conversationManager.addMessage(from, {
           role: 'user',
-          content: userMessage,
+          content: text.body,
           messageId,
           type: 'text'
         });
@@ -44,36 +37,16 @@ class MessageHandler {
       // GESTIONE MESSAGGI AUDIO
       // ========================================
       else if (type === 'audio') {
-        try {
-          logger.info(`Processing audio message, media ID: ${audio.id}`);
+        // SOLO LOGGING - ElevenLabs gestisce tutto (trascrizione + risposta)
+        conversationManager.addMessage(from, {
+          role: 'user',
+          content: '[Audio message - handled by ElevenLabs]',
+          messageId,
+          type: 'audio'
+        });
 
-          // 1. Scarica l'audio da WhatsApp
-          const audioBuffer = await whatsappService.downloadMedia(audio.id);
-          logger.debug(`Audio downloaded, size: ${audioBuffer.length} bytes`);
-
-          // 2. Trascrivi con Whisper (per logging)
-          userMessage = await openaiService.transcribeAudio(audioBuffer, 'audio.ogg');
-          logger.info(`Audio transcribed: "${userMessage.substring(0, 50)}..."`);
-
-          // SOLO LOGGING - ElevenLabs risponderà
-          conversationManager.addMessage(from, {
-            role: 'user',
-            content: userMessage,
-            messageId,
-            type: 'audio'
-          });
-
-          logger.info(`Audio message logged for ${from}, ElevenLabs will respond`);
-          return; // RETURN IMMEDIATO, non generare risposta
-
-        } catch (error) {
-          logger.error('Error processing audio:', error);
-          await whatsappService.sendTextMessage(
-            from,
-            "Mi dispiace, ho avuto problemi a processare l'audio. Riprova o scrivimi in testo."
-          );
-          return;
-        }
+        logger.info(`Audio message logged for ${from}, ElevenLabs will handle transcription and response`);
+        return; // RETURN IMMEDIATO
       }
 
       // ========================================
@@ -133,9 +106,7 @@ class MessageHandler {
 
     } catch (error) {
       logger.error('Error handling incoming message:', error);
-
       // Non inviare messaggio di errore per text/audio per evitare conflitti con ElevenLabs
-      // ElevenLabs gestirà la risposta all'utente
       logger.error('Message processing failed, no error message sent to avoid conflicts with ElevenLabs');
     }
   }
