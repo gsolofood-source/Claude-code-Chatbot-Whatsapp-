@@ -1,35 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ConversationList } from "@/components/conversation-list";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Filter } from "lucide-react";
-import { mockConversations, mockConversationMessages } from "@/lib/mock-data";
+import { Search, Filter, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+
+interface Conversation {
+  id: string;
+  userId: string;
+  userName: string;
+  lastMessage: string;
+  timestamp: string;
+  status: string;
+  unread: boolean;
+  messageCount: number;
+  type: string;
+}
+
+interface Message {
+  id?: string;
+  content: string;
+  role: string;
+  timestamp: string;
+  sender?: string;
+}
+
+interface ConversationDetails {
+  userId: string;
+  messages: Message[];
+  messageCount: number;
+  createdAt: string;
+  lastActivity: string;
+  sessionId?: string;
+}
 
 export default function ConversationsPage() {
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversationDetails, setConversationDetails] = useState<ConversationDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
-  const filteredConversations = mockConversations.filter((conv) =>
+  const fetchConversations = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/conversations");
+      const data = await response.json();
+      setConversations(data.conversations || []);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchConversationDetails = async (userId: string) => {
+    setLoadingDetails(true);
+    try {
+      const response = await fetch(`/api/conversations?userId=${userId}`);
+      const data = await response.json();
+
+      if (data.success && data.conversation) {
+        setConversationDetails(data.conversation);
+      } else {
+        setConversationDetails(null);
+      }
+    } catch (error) {
+      console.error("Error fetching conversation details:", error);
+      setConversationDetails(null);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConversations();
+    const interval = setInterval(fetchConversations, 10000); // Refresh every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (selectedId) {
+      fetchConversationDetails(selectedId);
+    } else {
+      setConversationDetails(null);
+    }
+  }, [selectedId]);
+
+  const filteredConversations = conversations.filter((conv) =>
     conv.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.userId.includes(searchQuery)
   );
 
-  const selectedConversation = mockConversations.find((c) => c.id === selectedId);
-  const messages = selectedId ? mockConversationMessages[selectedId as keyof typeof mockConversationMessages] : [];
+  const selectedConversation = conversations.find((c) => c.id === selectedId);
+  const messages = conversationDetails?.messages || [];
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Conversations</h2>
-        <p className="text-muted-foreground">
-          View and manage all WhatsApp conversations
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Conversations</h2>
+          <p className="text-muted-foreground">
+            View and manage all WhatsApp conversations
+          </p>
+        </div>
+        <Button onClick={fetchConversations} variant="outline" size="sm" disabled={loading}>
+          <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
+          Refresh
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -63,18 +148,37 @@ export default function ConversationsPage() {
                   <TabsTrigger value="unread">Unread</TabsTrigger>
                 </TabsList>
                 <TabsContent value="all" className="mt-4">
-                  <ConversationList
-                    conversations={filteredConversations}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                  />
+                  {loading ? (
+                    <div className="flex items-center justify-center h-[300px]">
+                      <div className="text-muted-foreground">Loading conversations...</div>
+                    </div>
+                  ) : filteredConversations.length === 0 ? (
+                    <div className="flex items-center justify-center h-[300px]">
+                      <div className="text-center text-muted-foreground">
+                        <p>No active conversations</p>
+                        <p className="text-xs mt-2">Conversations will appear here when users start chatting</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <ConversationList
+                      conversations={filteredConversations}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                    />
+                  )}
                 </TabsContent>
                 <TabsContent value="unread" className="mt-4">
-                  <ConversationList
-                    conversations={filteredConversations.filter((c) => c.unread)}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                  />
+                  {loading ? (
+                    <div className="flex items-center justify-center h-[300px]">
+                      <div className="text-muted-foreground">Loading conversations...</div>
+                    </div>
+                  ) : (
+                    <ConversationList
+                      conversations={filteredConversations.filter((c) => c.unread)}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                    />
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -109,36 +213,46 @@ export default function ConversationsPage() {
                 </div>
 
                 <div className="space-y-4 max-h-[500px] overflow-y-auto">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "flex",
-                        message.sender === "user" ? "justify-start" : "justify-end"
-                      )}
-                    >
+                  {loadingDetails ? (
+                    <div className="flex items-center justify-center h-[300px]">
+                      <div className="text-muted-foreground">Loading messages...</div>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-[300px]">
+                      <div className="text-muted-foreground">No messages yet</div>
+                    </div>
+                  ) : (
+                    messages.map((message, index) => (
                       <div
+                        key={message.id || index}
                         className={cn(
-                          "max-w-[70%] rounded-lg p-3",
-                          message.sender === "user"
-                            ? "bg-muted"
-                            : "bg-primary text-primary-foreground"
+                          "flex",
+                          (message.sender === "user" || message.role === "user") ? "justify-start" : "justify-end"
                         )}
                       >
-                        <p className="text-sm">{message.content}</p>
-                        <p
+                        <div
                           className={cn(
-                            "text-xs mt-1",
-                            message.sender === "user"
-                              ? "text-muted-foreground"
-                              : "text-primary-foreground/70"
+                            "max-w-[70%] rounded-lg p-3",
+                            (message.sender === "user" || message.role === "user")
+                              ? "bg-muted"
+                              : "bg-primary text-primary-foreground"
                           )}
                         >
-                          {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                        </p>
+                          <p className="text-sm">{message.content}</p>
+                          <p
+                            className={cn(
+                              "text-xs mt-1",
+                              (message.sender === "user" || message.role === "user")
+                                ? "text-muted-foreground"
+                                : "text-primary-foreground/70"
+                            )}
+                          >
+                            {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 <div className="flex gap-2 pt-4 border-t">
