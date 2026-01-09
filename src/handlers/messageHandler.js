@@ -5,7 +5,173 @@ import openaiService from '../services/openaiService.js';
 import databaseService from '../services/databaseService.js';
 import logger from '../utils/logger.js';
 
+// Messaggi di onboarding
+const MESSAGES = {
+  WELCOME: `Ciao! Sono Joe Bastianich. 🍷
+
+Prima di iniziare la nostra conversazione, mi piacerebbe sapere con chi sto parlando.
+
+Come ti chiami?`,
+  
+  ASK_NAME_AGAIN: `Non ho capito bene il tuo nome. Puoi ripeterlo? Scrivi semplicemente il tuo nome, per esempio "Marco" o "Mi chiamo Marco".`,
+  
+  WELCOME_BACK: (name) => `Ciao ${name}! Sono Joe. Come posso aiutarti oggi?`,
+  
+  NAME_CONFIRMED: (name) => `Piacere di conoscerti, ${name}! 🤝
+
+Sono qui per parlare di ristorazione, business, vino, o qualsiasi cosa tu voglia discutere. Cosa ti porta qui oggi?`
+};
+
 class MessageHandler {
+  
+  /**
+   * Estrae il nome dal messaggio usando GPT
+   */
+  async extractNameFromMessage(message) {
+    try {
+      const response = await openaiService.client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Sei un assistente che estrae nomi di persona dai messaggi.
+            
+REGOLE:
+- Se il messaggio contiene un nome di persona, restituisci SOLO il nome (prima lettera maiuscola)
+- Se il messaggio è solo un nome (es: "Marco", "maria", "Giovanni Rossi"), restituisci il primo nome
+- Se il messaggio contiene "mi chiamo X" o "sono X", estrai X
+- Se NON c'è un nome chiaro di persona, restituisci esattamente: NO_NAME
+- Non inventare nomi
+- Ignora saluti, domande, o altro testo
+
+ESEMPI:
+- "Marco" → "Marco"
+- "mi chiamo giulia" → "Giulia"  
+- "Sono Alessandro" → "Alessandro"
+- "Giovanni Rossi" → "Giovanni"
+- "Ciao come stai?" → "NO_NAME"
+- "Voglio parlare con Joe" → "NO_NAME"
+- "123" → "NO_NAME"
+- "ok" → "NO_NAME"`
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ],
+        max_tokens: 50,
+        temperature: 0
+      });
+
+      const extractedName = response.choices[0].message.content.trim();
+      
+      if (extractedName === 'NO_NAME' || extractedName.length > 50) {
+        return null;
+      }
+      
+      return extractedName;
+    } catch (error) {
+      logger.error('Error extracting name:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Gestisce il flusso di onboarding (richiesta nome)
+   * Ritorna true se l'onboarding è completo, false se ancora in corso
+   */
+  async handleOnboarding(dbUser, dbConversation, from, messageContent, messageId) {
+    // Se l'utente ha già un nome, onboarding completato
+    if (dbUser.name) {
+      logger.debug(`User ${from} already registered as: ${dbUser.name}`);
+      return true; // Onboarding completo, procedi normalmente
+    }
+
+    // L'utente non ha un nome - siamo in fase di onboarding
+    logger.info(`User ${from} needs onboarding (no name set)`);
+
+    // Controlla se questo è il primo messaggio (nessun messaggio precedente nella conversazione)
+    const messageCount = dbConversation?.message_count || 0;
+    
+    // Salva il messaggio dell'utente
+    if (dbConversation) {
+      await databaseService.saveMessage(
+        dbConversation.id,
+        dbUser.id,
+        'user',
+        messageContent,
+        'text',
+        { whatsappMessageId: messageId }
+      );
+    }
+
+    // Se è il primo messaggio, manda il benvenuto
+    if (messageCount === 0) {
+      logger.info(`First message from ${from}, sending welcome`);
+      await whatsappService.sendTextMessage(from, MESSAGES.WELCOME);
+      
+      // Salva la risposta del bot
+      if (dbConversation) {
+        await databaseService.saveMessage(
+          dbConversation.id,
+          dbUser.id,
+          'assistant',
+          MESSAGES.WELCOME,
+          'text',
+          {}
+        );
+      }
+      
+      return false; // Onboarding in corso
+    }
+
+    // Non è il primo messaggio - l'utente sta rispondendo alla richiesta del nome
+    // Prova a estrarre il nome
+    const extractedName = await this.extractNameFromMessage(messageContent);
+
+    if (extractedName) {
+      // Nome trovato! Salvalo nel database
+      await databaseService.updateUserName(dbUser.id, extractedName);
+      logger.info(`User ${from} registered with name: ${extractedName}`);
+
+      // Manda conferma
+      const confirmMessage = MESSAGES.NAME_CONFIRMED(extractedName);
+      await whatsappService.sendTextMessage(from, confirmMessage);
+      
+      // Salva la risposta del bot
+      if (dbConversation) {
+        await databaseService.saveMessage(
+          dbConversation.id,
+          dbUser.id,
+          'assistant',
+          confirmMessage,
+          'text',
+          {}
+        );
+      }
+
+      return true; // Onboarding completo!
+    } else {
+      // Nome non trovato, richiedi di nuovo
+      logger.info(`Could not extract name from: "${messageContent}"`);
+      await whatsappService.sendTextMessage(from, MESSAGES.ASK_NAME_AGAIN);
+      
+      // Salva la risposta del bot
+      if (dbConversation) {
+        await databaseService.saveMessage(
+          dbConversation.id,
+          dbUser.id,
+          'assistant',
+          MESSAGES.ASK_NAME_AGAIN,
+          'text',
+          {}
+        );
+      }
+
+      return false; // Onboarding ancora in corso
+    }
+  }
+
   /**
    * Gestisce i messaggi in arrivo da WhatsApp
    */
@@ -35,11 +201,36 @@ class MessageHandler {
       }
 
       // ========================================
+      // ONBOARDING: Controlla se l'utente ha un nome
+      // (Solo per messaggi di TESTO - audio gestito nel suo blocco)
+      // ========================================
+      if (dbUser && type === 'text') {
+        const messageContent = text.body;
+
+        const onboardingComplete = await this.handleOnboarding(
+          dbUser, 
+          dbConversation, 
+          from, 
+          messageContent, 
+          messageId
+        );
+
+        if (!onboardingComplete) {
+          // Onboarding in corso - non procedere con il normale flusso
+          logger.info(`Onboarding in progress for ${from}, blocking normal flow`);
+          return;
+        }
+
+        // Ricarica l'utente per avere il nome aggiornato
+        dbUser = await databaseService.getUserByPhone(from);
+      }
+
+      // ========================================
       // GESTIONE MESSAGGI TESTUALI
       // ========================================
       if (type === 'text') {
-        // Salva nel database
-        if (dbUser && dbConversation) {
+        // Salva nel database (se non già salvato dall'onboarding)
+        if (dbUser && dbConversation && dbUser.name) {
           await databaseService.saveMessage(
             dbConversation.id,
             dbUser.id,
@@ -50,7 +241,7 @@ class MessageHandler {
           );
         }
 
-        // SOLO LOGGING - ElevenLabs risponderà
+        // Logga nella cache
         conversationManager.addMessage(from, {
           role: 'user',
           content: text.body,
@@ -58,43 +249,144 @@ class MessageHandler {
           type: 'text'
         });
 
-        logger.info(`Text message logged for ${from}, ElevenLabs will respond`);
-        return; // RETURN IMMEDIATO, non generare risposta
+        logger.info(`Text message logged for ${from} (${dbUser?.name || 'unknown'}), ElevenLabs will respond`);
+        return;
       }
 
       // ========================================
       // GESTIONE MESSAGGI AUDIO
+      // Backend gestisce: Whisper → GPT → TTS → Audio
       // ========================================
       else if (type === 'audio') {
-        // Salva nel database
-        if (dbUser && dbConversation) {
-          await databaseService.saveMessage(
-            dbConversation.id,
-            dbUser.id,
-            'user',
-            '[Audio message]',
-            'audio',
-            { whatsappMessageId: messageId }
+        try {
+          logger.info(`Processing audio message, media ID: ${audio.id}`);
+
+          // 1. Scarica l'audio da WhatsApp
+          const audioBuffer = await whatsappService.downloadMedia(audio.id);
+          logger.debug(`Audio downloaded, size: ${audioBuffer.length} bytes`);
+
+          // 2. Trascrivi con Whisper
+          const transcription = await openaiService.transcribeAudio(audioBuffer);
+          logger.info(`Audio transcribed: "${transcription.substring(0, 50)}..."`);
+
+          // Se utente in onboarding (senza nome), usa la trascrizione per estrarre nome
+          if (dbUser && !dbUser.name) {
+            // Salva il messaggio
+            if (dbConversation) {
+              await databaseService.saveMessage(
+                dbConversation.id,
+                dbUser.id,
+                'user',
+                transcription,
+                'audio',
+                { whatsappMessageId: messageId, audioTranscript: transcription }
+              );
+            }
+
+            // Prova a estrarre il nome dalla trascrizione
+            const extractedName = await this.extractNameFromMessage(transcription);
+            
+            if (extractedName) {
+              // Nome trovato!
+              await databaseService.updateUserName(dbUser.id, extractedName);
+              logger.info(`User ${from} registered with name from audio: ${extractedName}`);
+
+              const confirmMessage = MESSAGES.NAME_CONFIRMED(extractedName);
+              await whatsappService.sendTextMessage(from, confirmMessage);
+              
+              if (dbConversation) {
+                await databaseService.saveMessage(
+                  dbConversation.id,
+                  dbUser.id,
+                  'assistant',
+                  confirmMessage,
+                  'text',
+                  {}
+                );
+              }
+              return;
+            } else {
+              // Non trovato, richiedi nome
+              await whatsappService.sendTextMessage(from, MESSAGES.ASK_NAME_AGAIN);
+              if (dbConversation) {
+                await databaseService.saveMessage(
+                  dbConversation.id,
+                  dbUser.id,
+                  'assistant',
+                  MESSAGES.ASK_NAME_AGAIN,
+                  'text',
+                  {}
+                );
+              }
+              return;
+            }
+          }
+
+          // 3. Genera risposta con GPT e audio con ElevenLabs TTS
+          const response = await elevenlabsService.getAudioResponse(from, transcription);
+          logger.info(`GPT response: "${response.text.substring(0, 50)}..."`);
+
+          // 4. Salva nel database
+          if (dbUser && dbConversation) {
+            await databaseService.saveMessage(
+              dbConversation.id,
+              dbUser.id,
+              'user',
+              transcription,
+              'audio',
+              { whatsappMessageId: messageId, audioTranscript: transcription }
+            );
+            
+            await databaseService.saveMessage(
+              dbConversation.id,
+              dbUser.id,
+              'assistant',
+              response.text,
+              'audio',
+              {}
+            );
+          }
+
+          // 5. Logga nella cache
+          conversationManager.addMessage(from, {
+            role: 'user',
+            content: transcription,
+            messageId,
+            type: 'audio'
+          });
+
+          conversationManager.addMessage(from, {
+            role: 'assistant',
+            content: response.text,
+            type: 'audio'
+          });
+
+          // 6. Invia risposta audio
+          if (response.audioBuffer) {
+            await whatsappService.sendAudioMessage(from, response.audioBuffer);
+            logger.info(`Audio response sent to ${from} (${dbUser?.name || 'unknown'})`);
+          } else {
+            // Fallback a testo se audio non disponibile
+            await whatsappService.sendTextMessage(from, response.text);
+            logger.info(`Text response sent to ${from} (audio generation failed)`);
+          }
+
+          return;
+
+        } catch (error) {
+          logger.error('Error processing audio:', error);
+          await whatsappService.sendTextMessage(
+            from,
+            "Mi dispiace, ho avuto problemi a processare il messaggio audio. Riprova!"
           );
+          return;
         }
-
-        // SOLO LOGGING - ElevenLabs gestisce tutto (trascrizione + risposta)
-        conversationManager.addMessage(from, {
-          role: 'user',
-          content: '[Audio message - handled by ElevenLabs]',
-          messageId,
-          type: 'audio'
-        });
-
-        logger.info(`Audio message logged for ${from}, ElevenLabs will handle transcription and response`);
-        return; // RETURN IMMEDIATO
       }
 
       // ========================================
-      // GESTIONE IMMAGINI (MANTIENI FLUSSO COMPLETO)
+      // GESTIONE IMMAGINI
       // ========================================
       else if (type === 'image') {
-        // ElevenLabs NON gestisce immagini, quindi il backend risponde
         try {
           logger.info(`Processing image message, media ID: ${image.id}`);
 
@@ -106,7 +398,7 @@ class MessageHandler {
           const imageAnalysis = await openaiService.analyzeImage(imageBuffer);
           logger.info(`Image analyzed: "${imageAnalysis.substring(0, 50)}..."`);
 
-          // 3. Salva nel database - messaggio utente
+          // 3. Salva nel database
           if (dbUser && dbConversation) {
             await databaseService.saveMessage(
               dbConversation.id,
@@ -117,7 +409,6 @@ class MessageHandler {
               { whatsappMessageId: messageId, imageAnalysis }
             );
             
-            // Salva la risposta dell'assistant
             await databaseService.saveMessage(
               dbConversation.id,
               dbUser.id,
@@ -128,7 +419,7 @@ class MessageHandler {
             );
           }
 
-          // 3. Logga la domanda utente (cache)
+          // 4. Logga nella cache
           conversationManager.addMessage(from, {
             role: 'user',
             content: '[Image sent]',
@@ -136,18 +427,17 @@ class MessageHandler {
             type: 'image'
           });
 
-          // 4. Logga la risposta assistant (cache)
           conversationManager.addMessage(from, {
             role: 'assistant',
             content: imageAnalysis,
             type: 'text'
           });
 
-          // 5. Invia il feedback all'utente
+          // 5. Invia risposta
           await whatsappService.sendTextMessage(from, imageAnalysis);
-          logger.info(`Image analysis sent to ${from}`);
+          logger.info(`Image analysis sent to ${from} (${dbUser?.name || 'unknown'})`);
 
-          return; // Flusso completato
+          return;
 
         } catch (error) {
           logger.error('Error processing image:', error);
@@ -169,8 +459,7 @@ class MessageHandler {
 
     } catch (error) {
       logger.error('Error handling incoming message:', error);
-      // Non inviare messaggio di errore per text/audio per evitare conflitti con ElevenLabs
-      logger.error('Message processing failed, no error message sent to avoid conflicts with ElevenLabs');
+      logger.error('Message processing failed');
     }
   }
 
