@@ -13,11 +13,15 @@ class ElevenLabsService {
 
   /**
    * Ottieni risposta testuale e audio in stile Joe Bastianich usando OpenAI
+   * @param {string} userId - ID utente
+   * @param {string} message - Messaggio utente
+   * @param {string} sessionId - Session ID opzionale
+   * @param {Array} conversationHistory - Cronologia messaggi opzionale
    */
-  async getAudioResponse(userId, message, sessionId = null) {
+  async getAudioResponse(userId, message, sessionId = null, conversationHistory = []) {
     try {
-      // Genera risposta testuale usando OpenAI Assistant
-      const responseText = await openaiService.getResponse(userId, message);
+      // Genera risposta testuale usando OpenAI Assistant (con cronologia)
+      const responseText = await openaiService.getResponse(userId, message, conversationHistory);
 
       // Genera audio con la voce di Joe
       let audioBuffer = null;
@@ -137,33 +141,6 @@ class ElevenLabsService {
     } catch (error) {
       logger.error('Error generating TTS:', error.response?.data || error.message);
       throw error;
-    }
-  }
-
-  /**
-   * Text-to-Speech usando la voce dell'Agent Joe
-   * Questo metodo è per i MESSAGGI audio, NON per le chiamate vocali
-   * @param {string} text - Testo da convertire in audio
-   * @returns {Promise<Buffer|null>} - Buffer audio MP3 o null se fallisce
-   */
-  async textToSpeechWithAgentVoice(text) {
-    try {
-      // Carica la voce dell'agent se non l'abbiamo già
-      if (!this.voiceId) {
-        await this.loadAgentVoice();
-      }
-
-      if (!this.voiceId) {
-        logger.warn('No voice ID available for TTS');
-        return null;
-      }
-
-      // Usa il metodo TTS esistente
-      return await this.textToSpeech(text, this.voiceId);
-
-    } catch (error) {
-      logger.error('Error in textToSpeechWithAgentVoice:', error.message);
-      return null; // Fallback a testo
     }
   }
 }

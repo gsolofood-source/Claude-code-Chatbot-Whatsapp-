@@ -101,16 +101,36 @@ class OpenAIService {
 
   /**
    * Invia un messaggio all'Assistant e ottieni la risposta
+   * @param {string} userId - ID utente (numero telefono)
+   * @param {string} userMessage - Messaggio dell'utente
+   * @param {Array} conversationHistory - Cronologia messaggi opzionale [{role, content}, ...]
    */
-  async getResponse(userId, userMessage) {
+  async getResponse(userId, userMessage, conversationHistory = []) {
     try {
       // Ottieni o crea il thread per questo utente
       const threadId = await this.getOrCreateThread(userId);
 
+      // Costruisci il messaggio con contesto se disponibile
+      let messageWithContext = userMessage;
+      
+      if (conversationHistory && conversationHistory.length > 0) {
+        const historyText = conversationHistory
+          .map(msg => `${msg.role === 'user' ? 'Utente' : 'Joe'}: ${msg.content}`)
+          .join('\n');
+        
+        messageWithContext = `[Contesto della conversazione precedente - usa queste informazioni per rispondere in modo coerente e personalizzato:]
+${historyText}
+
+[Messaggio attuale dell'utente:]
+${userMessage}`;
+        
+        logger.debug(`Message with ${conversationHistory.length} messages of context`);
+      }
+
       // Aggiungi il messaggio dell'utente al thread
       await this.client.beta.threads.messages.create(threadId, {
         role: 'user',
-        content: userMessage
+        content: messageWithContext
       });
 
       logger.debug(`Message added to thread ${threadId}: "${userMessage.substring(0, 50)}..."`);

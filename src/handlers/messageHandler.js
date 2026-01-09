@@ -7,11 +7,19 @@ import logger from '../utils/logger.js';
 
 // Messaggi di onboarding
 const MESSAGES = {
-  WELCOME: `Ciao! Sono Joe Bastianich. 🍷
+  // Prompt per GPT per generare il messaggio di benvenuto
+  WELCOME_PROMPT: (userMessage) => `L'utente ti ha appena scritto per la prima volta. Questo è il suo primo messaggio:
+"${userMessage}"
 
-Prima di iniziare la nostra conversazione, mi piacerebbe sapere con chi sto parlando.
+ISTRUZIONI IMPORTANTI:
+1. Presentati brevemente come Joe Bastianich (ristoratore, imprenditore, giudice MasterChef)
+2. Se l'utente ha fatto una domanda o detto qualcosa di specifico, fai un breve commento pertinente
+3. Chiedi il nome dell'utente in modo naturale e amichevole
+4. Mantieni il tono diretto e professionale tipico di Joe
+5. La risposta deve essere breve (2-3 frasi massimo)
+6. NON rispondere ancora alla domanda dell'utente - prima devi sapere il suo nome
 
-Come ti chiami?`,
+Esempio di tono: "Ciao! Sono Joe Bastianich. [breve commento sul messaggio]. Ma prima dimmi, come ti chiami?"`,
   
   ASK_NAME_AGAIN: `Non ho capito bene il tuo nome. Puoi ripeterlo? Scrivi semplicemente il tuo nome, per esempio "Marco" o "Mi chiamo Marco".`,
   
@@ -105,21 +113,61 @@ ESEMPI:
       );
     }
 
-    // Se è il primo messaggio, manda il benvenuto
+    // Se è il primo messaggio, manda il benvenuto personalizzato con GPT
     if (messageCount === 0) {
-      logger.info(`First message from ${from}, sending welcome`);
-      await whatsappService.sendTextMessage(from, MESSAGES.WELCOME);
+      logger.info(`First message from ${from}, generating personalized welcome with GPT`);
       
-      // Salva la risposta del bot
-      if (dbConversation) {
-        await databaseService.saveMessage(
-          dbConversation.id,
-          dbUser.id,
-          'assistant',
-          MESSAGES.WELCOME,
-          'text',
-          {}
-        );
+      try {
+        // Genera risposta di benvenuto con GPT che legge il messaggio dell'utente
+        const welcomePrompt = MESSAGES.WELCOME_PROMPT(messageContent);
+        const welcomeResponse = await openaiService.client.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "Sei Joe Bastianich, famoso ristoratore italo-americano, imprenditore e giudice di MasterChef Italia. Rispondi sempre in italiano con tono diretto, professionale ma amichevole."
+            },
+            {
+              role: "user",
+              content: welcomePrompt
+            }
+          ],
+          max_tokens: 200,
+          temperature: 0.7
+        });
+
+        const welcomeMessage = welcomeResponse.choices[0].message.content.trim();
+        logger.info(`GPT generated welcome: "${welcomeMessage.substring(0, 50)}..."`);
+
+        await whatsappService.sendTextMessage(from, welcomeMessage);
+        
+        // Salva la risposta del bot
+        if (dbConversation) {
+          await databaseService.saveMessage(
+            dbConversation.id,
+            dbUser.id,
+            'assistant',
+            welcomeMessage,
+            'text',
+            {}
+          );
+        }
+      } catch (error) {
+        // Fallback a messaggio semplice se GPT fallisce
+        logger.error('Error generating welcome with GPT, using fallback:', error.message);
+        const fallbackMessage = "Ciao! Sono Joe Bastianich. Prima di iniziare, come ti chiami?";
+        await whatsappService.sendTextMessage(from, fallbackMessage);
+        
+        if (dbConversation) {
+          await databaseService.saveMessage(
+            dbConversation.id,
+            dbUser.id,
+            'assistant',
+            fallbackMessage,
+            'text',
+            {}
+          );
+        }
       }
       
       return false; // Onboarding in corso
@@ -322,11 +370,18 @@ ESEMPI:
             }
           }
 
-          // 3. Genera risposta con GPT e audio con ElevenLabs TTS
-          const response = await elevenlabsService.getAudioResponse(from, transcription);
+          // 3. Recupera cronologia degli ultimi 20 messaggi dal database
+          let conversationHistory = [];
+          if (dbConversation) {
+            conversationHistory = await databaseService.getMessagesForContext(dbConversation.id, 20);
+            logger.info(`Loaded ${conversationHistory.length} messages of context from database`);
+          }
+
+          // 4. Genera risposta con GPT (con contesto) e audio con ElevenLabs TTS
+          const response = await elevenlabsService.getAudioResponse(from, transcription, null, conversationHistory);
           logger.info(`GPT response: "${response.text.substring(0, 50)}..."`);
 
-          // 4. Salva nel database
+          // 5. Salva nel database
           if (dbUser && dbConversation) {
             await databaseService.saveMessage(
               dbConversation.id,
@@ -347,7 +402,7 @@ ESEMPI:
             );
           }
 
-          // 5. Logga nella cache
+          // 6. Logga nella cache
           conversationManager.addMessage(from, {
             role: 'user',
             content: transcription,
