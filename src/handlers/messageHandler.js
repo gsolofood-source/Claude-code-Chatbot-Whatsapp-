@@ -21,42 +21,16 @@ class MessageHandler {
       // GESTIONE MESSAGGI TESTUALI
       // ========================================
       if (type === 'text') {
-        try {
-          // 1. Logga il messaggio utente
-          conversationManager.addMessage(from, {
-            role: 'user',
-            content: text.body,
-            messageId,
-            type: 'text'
-          });
+        // SOLO LOGGING - ElevenLabs Agent risponderà via integrazione WhatsApp
+        conversationManager.addMessage(from, {
+          role: 'user',
+          content: text.body,
+          messageId,
+          type: 'text'
+        });
 
-          logger.info(`Processing text message from ${from}: "${text.body.substring(0, 50)}..."`);
-
-          // 2. Ottieni risposta da GPT
-          const responseText = await openaiService.getResponse(from, text.body);
-          logger.info(`GPT response: "${responseText.substring(0, 50)}..."`);
-
-          // 3. Logga la risposta assistant
-          conversationManager.addMessage(from, {
-            role: 'assistant',
-            content: responseText,
-            type: 'text'
-          });
-
-          // 4. Invia la risposta testuale
-          await whatsappService.sendTextMessage(from, responseText);
-          logger.info(`Text response sent to ${from}`);
-
-          return;
-
-        } catch (error) {
-          logger.error('Error processing text message:', error);
-          await whatsappService.sendTextMessage(
-            from,
-            "Mi dispiace, ho avuto problemi a processare il messaggio. Riprova!"
-          );
-          return;
-        }
+        logger.info(`Text message logged for ${from}, ElevenLabs Agent will respond`);
+        return; // RETURN IMMEDIATO, non generare risposta
       }
 
       // ========================================
