@@ -139,6 +139,33 @@ class ElevenLabsService {
       throw error;
     }
   }
+
+  /**
+   * Text-to-Speech usando la voce dell'Agent Joe
+   * Questo metodo è per i MESSAGGI audio, NON per le chiamate vocali
+   * @param {string} text - Testo da convertire in audio
+   * @returns {Promise<Buffer|null>} - Buffer audio MP3 o null se fallisce
+   */
+  async textToSpeechWithAgentVoice(text) {
+    try {
+      // Carica la voce dell'agent se non l'abbiamo già
+      if (!this.voiceId) {
+        await this.loadAgentVoice();
+      }
+
+      if (!this.voiceId) {
+        logger.warn('No voice ID available for TTS');
+        return null;
+      }
+
+      // Usa il metodo TTS esistente
+      return await this.textToSpeech(text, this.voiceId);
+
+    } catch (error) {
+      logger.error('Error in textToSpeechWithAgentVoice:', error.message);
+      return null; // Fallback a testo
+    }
+  }
 }
 
 export default new ElevenLabsService();

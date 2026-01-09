@@ -21,32 +21,106 @@ class MessageHandler {
       // GESTIONE MESSAGGI TESTUALI
       // ========================================
       if (type === 'text') {
-        // SOLO LOGGING - ElevenLabs risponderà
-        conversationManager.addMessage(from, {
-          role: 'user',
-          content: text.body,
-          messageId,
-          type: 'text'
-        });
+        try {
+          // 1. Logga il messaggio utente
+          conversationManager.addMessage(from, {
+            role: 'user',
+            content: text.body,
+            messageId,
+            type: 'text'
+          });
 
-        logger.info(`Text message logged for ${from}, ElevenLabs will respond`);
-        return; // RETURN IMMEDIATO, non generare risposta
+          logger.info(`Processing text message from ${from}: "${text.body.substring(0, 50)}..."`);
+
+          // 2. Ottieni risposta da GPT
+          const responseText = await openaiService.getResponse(from, text.body);
+          logger.info(`GPT response: "${responseText.substring(0, 50)}..."`);
+
+          // 3. Logga la risposta assistant
+          conversationManager.addMessage(from, {
+            role: 'assistant',
+            content: responseText,
+            type: 'text'
+          });
+
+          // 4. Invia la risposta testuale
+          await whatsappService.sendTextMessage(from, responseText);
+          logger.info(`Text response sent to ${from}`);
+
+          return;
+
+        } catch (error) {
+          logger.error('Error processing text message:', error);
+          await whatsappService.sendTextMessage(
+            from,
+            "Mi dispiace, ho avuto problemi a processare il messaggio. Riprova!"
+          );
+          return;
+        }
       }
 
       // ========================================
       // GESTIONE MESSAGGI AUDIO
       // ========================================
       else if (type === 'audio') {
-        // SOLO LOGGING - ElevenLabs gestisce tutto (trascrizione + risposta)
-        conversationManager.addMessage(from, {
-          role: 'user',
-          content: '[Audio message - handled by ElevenLabs]',
-          messageId,
-          type: 'audio'
-        });
+        try {
+          logger.info(`Processing audio message, media ID: ${audio.id}`);
 
-        logger.info(`Audio message logged for ${from}, ElevenLabs will handle transcription and response`);
-        return; // RETURN IMMEDIATO
+          // 1. Scarica l'audio da WhatsApp
+          const audioBuffer = await whatsappService.downloadMedia(audio.id);
+          logger.debug(`Audio downloaded, size: ${audioBuffer.length} bytes`);
+
+          // 2. Trascrivi con Whisper
+          const transcription = await openaiService.transcribeAudio(audioBuffer);
+          logger.info(`Audio transcribed: "${transcription.substring(0, 50)}..."`);
+
+          // 3. Logga il messaggio utente (con trascrizione)
+          conversationManager.addMessage(from, {
+            role: 'user',
+            content: transcription,
+            messageId,
+            type: 'audio',
+            metadata: { originalType: 'audio' }
+          });
+
+          // 4. Ottieni risposta da GPT (usa lo stesso Assistant di Joe)
+          const responseText = await openaiService.getResponse(from, transcription);
+          logger.info(`GPT response: "${responseText.substring(0, 50)}..."`);
+
+          // 5. Genera audio con ElevenLabs TTS
+          const audioResponse = await elevenlabsService.textToSpeechWithAgentVoice(responseText);
+
+          // 6. Logga la risposta assistant
+          conversationManager.addMessage(from, {
+            role: 'assistant',
+            content: responseText,
+            type: 'audio',
+            metadata: {
+              responseType: 'audio',
+              source: 'backend-whisper-gpt-tts'
+            }
+          });
+
+          // 7. Invia la risposta audio all'utente
+          if (audioResponse) {
+            await whatsappService.sendAudioMessage(from, audioResponse);
+            logger.info(`Audio response sent to ${from}`);
+          } else {
+            // Fallback: invia testo se TTS fallisce
+            await whatsappService.sendTextMessage(from, responseText);
+            logger.info(`Text fallback sent to ${from}`);
+          }
+
+          return;
+
+        } catch (error) {
+          logger.error('Error processing audio message:', error);
+          await whatsappService.sendTextMessage(
+            from,
+            "Mi dispiace, ho avuto problemi a processare il messaggio vocale. Riprova!"
+          );
+          return;
+        }
       }
 
       // ========================================
