@@ -2,6 +2,7 @@ import whatsappService from '../services/whatsappService.js';
 import elevenlabsService from '../services/elevenlabsService.js';
 import conversationManager from '../services/conversationManager.js';
 import openaiService from '../services/openaiService.js';
+import databaseService from '../services/databaseService.js';
 import logger from '../utils/logger.js';
 
 class MessageHandler {
@@ -18,109 +19,75 @@ class MessageHandler {
       await whatsappService.markAsRead(messageId);
 
       // ========================================
+      // DATABASE: Trova o crea utente e conversazione
+      // ========================================
+      let dbUser = null;
+      let dbConversation = null;
+      
+      try {
+        dbUser = await databaseService.findOrCreateUser(from);
+        if (dbUser) {
+          dbConversation = await databaseService.findOrCreateConversation(dbUser.id);
+          logger.debug(`DB: User ${dbUser.id}, Conversation ${dbConversation?.id}`);
+        }
+      } catch (dbError) {
+        logger.warn('Database operation failed, continuing without persistence:', dbError.message);
+      }
+
+      // ========================================
       // GESTIONE MESSAGGI TESTUALI
       // ========================================
       if (type === 'text') {
-        try {
-          // 1. Logga il messaggio utente
-          conversationManager.addMessage(from, {
-            role: 'user',
-            content: text.body,
-            messageId,
-            type: 'text'
-          });
-
-          logger.info(`Processing text message from ${from}: "${text.body.substring(0, 50)}..."`);
-
-          // 2. Ottieni risposta da GPT
-          const responseText = await openaiService.getResponse(from, text.body);
-          logger.info(`GPT response: "${responseText.substring(0, 50)}..."`);
-
-          // 3. Logga la risposta assistant
-          conversationManager.addMessage(from, {
-            role: 'assistant',
-            content: responseText,
-            type: 'text'
-          });
-
-          // 4. Invia la risposta testuale
-          await whatsappService.sendTextMessage(from, responseText);
-          logger.info(`Text response sent to ${from}`);
-
-          return;
-
-        } catch (error) {
-          logger.error('Error processing text message:', error);
-          await whatsappService.sendTextMessage(
-            from,
-            "Mi dispiace, ho avuto problemi a processare il messaggio. Riprova!"
+        // Salva nel database
+        if (dbUser && dbConversation) {
+          await databaseService.saveMessage(
+            dbConversation.id,
+            dbUser.id,
+            'user',
+            text.body,
+            'text',
+            { whatsappMessageId: messageId }
           );
-          return;
         }
+
+        // SOLO LOGGING - ElevenLabs risponderà
+        conversationManager.addMessage(from, {
+          role: 'user',
+          content: text.body,
+          messageId,
+          type: 'text'
+        });
+
+        logger.info(`Text message logged for ${from}, ElevenLabs will respond`);
+        return; // RETURN IMMEDIATO, non generare risposta
       }
 
       // ========================================
       // GESTIONE MESSAGGI AUDIO
       // ========================================
       else if (type === 'audio') {
-        try {
-          logger.info(`Processing audio message, media ID: ${audio.id}`);
-
-          // 1. Scarica l'audio da WhatsApp
-          const audioBuffer = await whatsappService.downloadMedia(audio.id);
-          logger.debug(`Audio downloaded, size: ${audioBuffer.length} bytes`);
-
-          // 2. Trascrivi con Whisper
-          const transcription = await openaiService.transcribeAudio(audioBuffer);
-          logger.info(`Audio transcribed: "${transcription.substring(0, 50)}..."`);
-
-          // 3. Logga il messaggio utente (con trascrizione)
-          conversationManager.addMessage(from, {
-            role: 'user',
-            content: transcription,
-            messageId,
-            type: 'audio',
-            metadata: { originalType: 'audio' }
-          });
-
-          // 4. Ottieni risposta da GPT (usa lo stesso Assistant di Joe)
-          const responseText = await openaiService.getResponse(from, transcription);
-          logger.info(`GPT response: "${responseText.substring(0, 50)}..."`);
-
-          // 5. Genera audio con ElevenLabs TTS
-          const audioResponse = await elevenlabsService.textToSpeechWithAgentVoice(responseText);
-
-          // 6. Logga la risposta assistant
-          conversationManager.addMessage(from, {
-            role: 'assistant',
-            content: responseText,
-            type: 'audio',
-            metadata: {
-              responseType: 'audio',
-              source: 'backend-whisper-gpt-tts'
-            }
-          });
-
-          // 7. Invia la risposta audio all'utente
-          if (audioResponse) {
-            await whatsappService.sendAudioMessage(from, audioResponse);
-            logger.info(`Audio response sent to ${from}`);
-          } else {
-            // Fallback: invia testo se TTS fallisce
-            await whatsappService.sendTextMessage(from, responseText);
-            logger.info(`Text fallback sent to ${from}`);
-          }
-
-          return;
-
-        } catch (error) {
-          logger.error('Error processing audio message:', error);
-          await whatsappService.sendTextMessage(
-            from,
-            "Mi dispiace, ho avuto problemi a processare il messaggio vocale. Riprova!"
+        // Salva nel database
+        if (dbUser && dbConversation) {
+          await databaseService.saveMessage(
+            dbConversation.id,
+            dbUser.id,
+            'user',
+            '[Audio message]',
+            'audio',
+            { whatsappMessageId: messageId }
           );
-          return;
         }
+
+        // SOLO LOGGING - ElevenLabs gestisce tutto (trascrizione + risposta)
+        conversationManager.addMessage(from, {
+          role: 'user',
+          content: '[Audio message - handled by ElevenLabs]',
+          messageId,
+          type: 'audio'
+        });
+
+        logger.info(`Audio message logged for ${from}, ElevenLabs will handle transcription and response`);
+        return; // RETURN IMMEDIATO
       }
 
       // ========================================
@@ -139,7 +106,29 @@ class MessageHandler {
           const imageAnalysis = await openaiService.analyzeImage(imageBuffer);
           logger.info(`Image analyzed: "${imageAnalysis.substring(0, 50)}..."`);
 
-          // 3. Logga la domanda utente
+          // 3. Salva nel database - messaggio utente
+          if (dbUser && dbConversation) {
+            await databaseService.saveMessage(
+              dbConversation.id,
+              dbUser.id,
+              'user',
+              '[Image sent]',
+              'image',
+              { whatsappMessageId: messageId, imageAnalysis }
+            );
+            
+            // Salva la risposta dell'assistant
+            await databaseService.saveMessage(
+              dbConversation.id,
+              dbUser.id,
+              'assistant',
+              imageAnalysis,
+              'text',
+              {}
+            );
+          }
+
+          // 3. Logga la domanda utente (cache)
           conversationManager.addMessage(from, {
             role: 'user',
             content: '[Image sent]',
@@ -147,7 +136,7 @@ class MessageHandler {
             type: 'image'
           });
 
-          // 4. Logga la risposta assistant
+          // 4. Logga la risposta assistant (cache)
           conversationManager.addMessage(from, {
             role: 'assistant',
             content: imageAnalysis,

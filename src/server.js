@@ -3,6 +3,7 @@ import cors from 'cors';
 import { config, validateConfig } from './config/index.js';
 import routes from './routes/index.js';
 import logger from './utils/logger.js';
+import databaseService from './services/databaseService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -85,22 +86,38 @@ app.use((req, res) => {
 // Avvio server
 const PORT = process.env.PORT || config.port || 3000;
 
-app.listen(PORT, () => {
-  logger.info(`🚀 WhatsApp Joe Bastianich Bot started on port ${PORT}`);
-  logger.info(`Environment: ${config.nodeEnv}`);
-  logger.info(`Webhook URL: http://localhost:${PORT}/webhook`);
-  logger.info(`Health check: http://localhost:${PORT}/health`);
-  logger.info(`Stats: http://localhost:${PORT}/stats`);
-});
+// Funzione di avvio asincrona
+async function startServer() {
+  // Inizializza database
+  const dbConnected = await databaseService.initialize();
+  if (dbConnected) {
+    logger.info('✅ Database ready');
+  } else {
+    logger.warn('⚠️ Database not available - running without persistence');
+  }
+
+  app.listen(PORT, () => {
+    logger.info(`🚀 WhatsApp Joe Bastianich Bot started on port ${PORT}`);
+    logger.info(`Environment: ${config.nodeEnv}`);
+    logger.info(`Database: ${dbConnected ? 'Connected' : 'Not connected'}`);
+    logger.info(`Webhook URL: http://localhost:${PORT}/webhook`);
+    logger.info(`Health check: http://localhost:${PORT}/health`);
+    logger.info(`Stats: http://localhost:${PORT}/stats`);
+  });
+}
+
+startServer();
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
+  await databaseService.close();
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT signal received: closing HTTP server');
+  await databaseService.close();
   process.exit(0);
 });
 

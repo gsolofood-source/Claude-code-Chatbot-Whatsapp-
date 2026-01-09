@@ -4,6 +4,7 @@ import callsRouter from './calls.js';
 import conversationsRouter from './conversations.js';
 import elevenlabsWebhookRouter from './elevenlabsWebhook.js';
 import conversationManager from '../services/conversationManager.js';
+import databaseService from '../services/databaseService.js';
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get('/health', (req, res) => {
   });
 });
 
-// Stats endpoint
+// Stats endpoint (cache in-memory)
 router.get('/stats', (req, res) => {
   const stats = conversationManager.getStats();
   const conversations = conversationManager.getAllConversations();
@@ -39,6 +40,31 @@ router.get('/stats', (req, res) => {
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
+});
+
+// Database stats endpoint
+router.get('/stats/db', async (req, res) => {
+  try {
+    const dbStats = await databaseService.getStats();
+    
+    if (!dbStats) {
+      return res.json({
+        connected: false,
+        message: 'Database not connected'
+      });
+    }
+
+    res.json({
+      connected: true,
+      ...dbStats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      connected: false,
+      error: error.message
+    });
+  }
 });
 
 // Debug endpoint - verifica configurazione webhook
