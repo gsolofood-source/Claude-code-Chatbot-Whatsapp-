@@ -221,6 +221,93 @@ ESEMPI:
   }
 
   /**
+   * Gestisce le richieste di trascrizione chiamata
+   * Ritorna true se il messaggio era una richiesta di trascrizione, false altrimenti
+   */
+  async handleTranscriptRequest(messageText, dbUser, dbConversation, phoneNumber) {
+    // Parole chiave che indicano una richiesta di trascrizione
+    const transcriptKeywords = [
+      'trascrizione',
+      'transcript',
+      'cosa abbiamo detto',
+      'riassunto chiamata',
+      'chiamata precedente',
+      'ultima chiamata',
+      'mandami la trascrizione',
+      'inviami la trascrizione',
+      'voglio la trascrizione'
+    ];
+
+    const messageLower = messageText.toLowerCase().trim();
+    
+    // Controlla se il messaggio contiene parole chiave per la trascrizione
+    const isTranscriptRequest = transcriptKeywords.some(keyword => 
+      messageLower.includes(keyword.toLowerCase())
+    );
+
+    if (!isTranscriptRequest) {
+      return false; // Non è una richiesta di trascrizione
+    }
+
+    logger.info(`Transcript request detected from ${phoneNumber}`);
+
+    try {
+      // Recupera l'ultima trascrizione dal database
+      const lastTranscript = await databaseService.getLastCallTranscript(dbUser.id);
+
+      let responseMessage;
+
+      if (!lastTranscript) {
+        responseMessage = "Non ho trovato trascrizioni di chiamate recenti. Hai già fatto una chiamata con me? 📞";
+      } else {
+        // Formatta la trascrizione per l'utente
+        responseMessage = databaseService.formatTranscriptForUser(lastTranscript);
+        
+        if (!responseMessage) {
+          responseMessage = "Ho trovato una chiamata recente ma la trascrizione non è disponibile. Mi dispiace! 🙁";
+        }
+      }
+
+      // Invia la risposta
+      await whatsappService.sendTextMessage(phoneNumber, responseMessage);
+
+      // Salva nel database
+      if (dbConversation) {
+        await databaseService.saveMessage(
+          dbConversation.id,
+          dbUser.id,
+          'user',
+          messageText,
+          'text',
+          {}
+        );
+        
+        await databaseService.saveMessage(
+          dbConversation.id,
+          dbUser.id,
+          'assistant',
+          responseMessage.substring(0, 500) + (responseMessage.length > 500 ? '...' : ''),
+          'text',
+          {}
+        );
+      }
+
+      logger.info(`Transcript sent to ${phoneNumber}`);
+      return true; // Richiesta gestita
+
+    } catch (error) {
+      logger.error('Error handling transcript request:', error.message);
+      
+      await whatsappService.sendTextMessage(
+        phoneNumber,
+        "Mi dispiace, ho avuto un problema a recuperare la trascrizione. Riprova più tardi!"
+      );
+      
+      return true; // Comunque gestita (con errore)
+    }
+  }
+
+  /**
    * Gestisce i messaggi in arrivo da WhatsApp
    */
   async handleIncomingMessage(messageData) {
@@ -271,6 +358,17 @@ ESEMPI:
 
         // Ricarica l'utente per avere il nome aggiornato
         dbUser = await databaseService.getUserByPhone(from);
+      }
+
+      // ========================================
+      // CHECK RICHIESTA TRASCRIZIONE CHIAMATA
+      // ========================================
+      if (type === 'text' && dbUser) {
+        const transcriptRequest = await this.handleTranscriptRequest(text.body, dbUser, dbConversation, from);
+        if (transcriptRequest) {
+          // Richiesta di trascrizione gestita, non procedere oltre
+          return;
+        }
       }
 
       // ========================================

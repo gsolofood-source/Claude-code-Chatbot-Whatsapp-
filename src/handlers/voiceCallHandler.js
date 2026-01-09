@@ -1,5 +1,6 @@
 import voiceCallService from '../services/voiceCallService.js';
 import elevenLabsConversationalService from '../services/elevenLabsConversationalService.js';
+import databaseService from '../services/databaseService.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -165,8 +166,8 @@ class VoiceCallHandler {
             messages_count: transcript.messages?.length || 0
           });
 
-          // Salva trascrizione nello storico
-          this.addToHistory({
+          // Salva trascrizione nello storico e nel database
+          await this.addToHistory({
             callId: callId,
             userId: call.userId,
             conversationId: call.elevenLabsConversationId,
@@ -322,12 +323,12 @@ class VoiceCallHandler {
   }
 
   /**
-   * Aggiungi chiamata terminata allo storico
+   * Aggiungi chiamata terminata allo storico e salva nel database
    */
-  addToHistory(callData) {
+  async addToHistory(callData) {
     this.callHistory.unshift(callData); // Aggiungi all'inizio
 
-    // Mantieni solo le ultime N chiamate
+    // Mantieni solo le ultime N chiamate in memoria
     if (this.callHistory.length > this.maxHistorySize) {
       this.callHistory = this.callHistory.slice(0, this.maxHistorySize);
     }
@@ -336,6 +337,30 @@ class VoiceCallHandler {
       call_id: callData.callId,
       history_size: this.callHistory.length
     });
+
+    // Salva nel database per persistenza
+    try {
+      // Trova l'utente nel database
+      const phoneNumber = callData.userId.startsWith('+') ? callData.userId.slice(1) : callData.userId;
+      const dbUser = await databaseService.getUserByPhone(phoneNumber);
+      
+      if (dbUser) {
+        await databaseService.saveCallTranscript(dbUser.id, {
+          elevenLabsConversationId: callData.conversationId,
+          whatsappCallId: callData.callId,
+          direction: callData.direction || 'inbound',
+          durationSeconds: callData.duration,
+          transcript: callData.transcript,
+          startedAt: callData.startTime,
+          endedAt: callData.endTime
+        });
+        logger.info(`Call transcript saved to database for user ${dbUser.id}`);
+      } else {
+        logger.warn(`Could not save transcript - user not found: ${this.maskPhone(callData.userId)}`);
+      }
+    } catch (error) {
+      logger.error('Error saving call transcript to database:', error.message);
+    }
   }
 
   /**

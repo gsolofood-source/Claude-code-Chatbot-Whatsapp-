@@ -435,6 +435,130 @@ class DatabaseService {
   }
 
   // ==========================================
+  // CALL TRANSCRIPTS
+  // ==========================================
+
+  /**
+   * Salva la trascrizione di una chiamata
+   */
+  async saveCallTranscript(userId, transcriptData) {
+    if (!this.isConnected) return null;
+
+    try {
+      const result = await this.query(
+        `INSERT INTO call_transcripts 
+         (user_id, conversation_id, elevenlabs_conversation_id, whatsapp_call_id, 
+          direction, duration_seconds, transcript_json, summary, started_at, ended_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING *`,
+        [
+          userId,
+          transcriptData.conversationId || null,
+          transcriptData.elevenLabsConversationId || null,
+          transcriptData.whatsappCallId || null,
+          transcriptData.direction || 'inbound',
+          transcriptData.durationSeconds || null,
+          JSON.stringify(transcriptData.transcript || {}),
+          transcriptData.summary || null,
+          transcriptData.startedAt || null,
+          transcriptData.endedAt || new Date()
+        ]
+      );
+
+      logger.info(`Call transcript saved for user ${userId}`);
+      return result.rows[0];
+    } catch (error) {
+      logger.error('Error saving call transcript:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Ottieni l'ultima trascrizione di un utente
+   */
+  async getLastCallTranscript(userId) {
+    if (!this.isConnected) return null;
+
+    try {
+      const result = await this.query(
+        `SELECT * FROM call_transcripts 
+         WHERE user_id = $1 
+         ORDER BY ended_at DESC 
+         LIMIT 1`,
+        [userId]
+      );
+      return result.rows[0] || null;
+    } catch (error) {
+      logger.error('Error getting last call transcript:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Ottieni tutte le trascrizioni di un utente
+   */
+  async getUserCallTranscripts(userId, limit = 10) {
+    if (!this.isConnected) return [];
+
+    try {
+      const result = await this.query(
+        `SELECT * FROM call_transcripts 
+         WHERE user_id = $1 
+         ORDER BY ended_at DESC 
+         LIMIT $2`,
+        [userId, limit]
+      );
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting user call transcripts:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Formatta la trascrizione per inviarla all'utente
+   */
+  formatTranscriptForUser(transcriptRecord) {
+    if (!transcriptRecord || !transcriptRecord.transcript_json) {
+      return null;
+    }
+
+    const transcript = transcriptRecord.transcript_json;
+    const messages = transcript.messages || [];
+    
+    if (messages.length === 0) {
+      return "Non ho trovato messaggi nella trascrizione della chiamata.";
+    }
+
+    // Formatta data
+    const date = new Date(transcriptRecord.ended_at);
+    const dateStr = date.toLocaleDateString('it-IT', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Formatta durata
+    const duration = transcriptRecord.duration_seconds;
+    const durationStr = duration ? `${Math.floor(duration / 60)}m ${duration % 60}s` : 'N/A';
+
+    // Costruisci la trascrizione formattata
+    let formatted = `📞 *Trascrizione chiamata*\n`;
+    formatted += `📅 ${dateStr}\n`;
+    formatted += `⏱️ Durata: ${durationStr}\n\n`;
+    formatted += `---\n\n`;
+
+    for (const msg of messages) {
+      const role = msg.role === 'user' ? '👤 Tu' : '🎙️ Joe';
+      formatted += `${role}: ${msg.message || msg.content || msg.text}\n\n`;
+    }
+
+    return formatted;
+  }
+
+  // ==========================================
   // STATS & UTILITIES
   // ==========================================
 
