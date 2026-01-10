@@ -129,7 +129,9 @@ async function handlePostCallTranscription(data, eventTimestamp) {
     logger.info('Processing post-call transcription', {
       conversation_id,
       transcript_length: transcript?.length || 0,
-      duration: metadata?.call_duration_secs
+      duration: metadata?.call_duration_secs,
+      user_id_received: user_id,
+      metadata_keys: metadata ? Object.keys(metadata) : []
     });
 
     if (!transcript || transcript.length === 0) {
@@ -140,17 +142,41 @@ async function handlePostCallTranscription(data, eventTimestamp) {
     // Estrai il numero di telefono dall'user_id o metadata
     let phoneNumber = user_id;
     
-    // Se user_id contiene il prefisso whatsapp:, rimuovilo
-    if (phoneNumber && phoneNumber.startsWith('whatsapp:')) {
-      phoneNumber = phoneNumber.replace('whatsapp:', '').replace('+', '');
-    } else if (phoneNumber && phoneNumber.startsWith('+')) {
-      phoneNumber = phoneNumber.replace('+', '');
+    // Prova anche a cercare nei metadata se user_id non c'è
+    if (!phoneNumber && metadata) {
+      phoneNumber = metadata.phone_number || metadata.to || metadata.from || metadata.caller_id;
     }
+
+    logger.info('Phone number extraction', {
+      original_user_id: user_id,
+      extracted_phone: phoneNumber
+    });
+    
+    // Pulisci il numero di telefono
+    if (phoneNumber) {
+      // Rimuovi prefissi comuni
+      phoneNumber = phoneNumber
+        .replace('whatsapp:', '')
+        .replace('tel:', '')
+        .replace('+', '')
+        .replace(/\s/g, ''); // rimuovi spazi
+    }
+
+    logger.info('Cleaned phone number', { phoneNumber });
 
     // Cerca l'utente nel database
     let dbUser = null;
     if (phoneNumber) {
       dbUser = await databaseService.getUserByPhone(phoneNumber);
+      
+      // Se non trovato, prova senza il prefisso del paese (es: 39 per Italia)
+      if (!dbUser && phoneNumber.startsWith('39')) {
+        dbUser = await databaseService.getUserByPhone(phoneNumber.substring(2));
+      }
+      // Prova anche con il prefisso se non c'è
+      if (!dbUser && !phoneNumber.startsWith('39')) {
+        dbUser = await databaseService.getUserByPhone('39' + phoneNumber);
+      }
     }
 
     if (!dbUser) {
