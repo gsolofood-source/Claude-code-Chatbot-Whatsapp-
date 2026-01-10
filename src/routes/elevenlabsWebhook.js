@@ -1,12 +1,13 @@
 import express from 'express';
 import conversationManager from '../services/conversationManager.js';
+import databaseService from '../services/databaseService.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
 
 /**
  * POST /webhook/elevenlabs
- * Riceve eventi da ElevenLabs Agent
+ * Riceve eventi da ElevenLabs Agent (inclusi post-call webhooks)
  */
 router.post('/', async (req, res) => {
   try {
@@ -14,8 +15,7 @@ router.post('/', async (req, res) => {
 
     logger.info('ElevenLabs webhook received:', {
       type: event.type,
-      conversationId: event.conversation_id,
-      userId: event.user_id
+      conversationId: event.data?.conversation_id || event.conversation_id
     });
 
     // Rispondi subito con 200 per confermare ricezione
@@ -35,9 +35,32 @@ router.post('/', async (req, res) => {
  */
 async function processElevenLabsEvent(event) {
   try {
-    const { type, conversation_id, user_id } = event;
+    const { type, data, event_timestamp } = event;
 
-    // userId in formato WhatsApp (phone number)
+    // Gestisci i nuovi post-call webhooks
+    if (type === 'post_call_transcription') {
+      await handlePostCallTranscription(data, event_timestamp);
+      return;
+    }
+
+    if (type === 'post_call_audio') {
+      logger.info('Post-call audio received (not processed)', {
+        conversation_id: data?.conversation_id
+      });
+      return;
+    }
+
+    if (type === 'call_initiation_failure') {
+      logger.warn('Call initiation failed', {
+        conversation_id: data?.conversation_id,
+        failure_reason: data?.failure_reason
+      });
+      return;
+    }
+
+    // Gestione eventi legacy (in-call)
+    const conversation_id = event.conversation_id;
+    const user_id = event.user_id;
     const userId = user_id || conversation_id;
 
     if (!userId) {
@@ -47,15 +70,11 @@ async function processElevenLabsEvent(event) {
 
     switch (type) {
       case 'user_transcript':
-        // Utente ha inviato un messaggio (già loggato dal webhook WhatsApp)
-        // Non serve fare nulla qui
         logger.debug(`User transcript event for ${userId} - already logged by WhatsApp webhook`);
         break;
 
       case 'agent_response':
-        // ElevenLabs ha generato una risposta
         const agentMessage = event.agent_response || event.response || event.text;
-
         if (agentMessage) {
           conversationManager.addMessage(userId, {
             role: 'assistant',
@@ -67,43 +86,123 @@ async function processElevenLabsEvent(event) {
               timestamp: event.timestamp || new Date().toISOString()
             }
           });
-
           logger.info(`ElevenLabs response logged for ${userId}: "${agentMessage.substring(0, 50)}..."`);
-        } else {
-          logger.warn(`ElevenLabs agent_response event missing message content`);
         }
         break;
 
-      case 'agent_response_correction':
-        // Correzione della risposta (opzionale)
-        logger.debug(`Agent response correction for ${userId}`);
-        break;
-
       case 'conversation_end':
-        // Conversazione terminata
         logger.info(`Conversation ended for ${userId}`);
-        // Opzionale: potresti resettare la conversazione
-        // conversationManager.resetConversation(userId);
         break;
 
       case 'interruption':
-        // Utente ha interrotto l'agent
         logger.debug(`User interrupted agent for ${userId}`);
         break;
 
       case 'ping':
-        // Health check da ElevenLabs
         logger.debug('ElevenLabs ping received');
         break;
 
       default:
         logger.debug(`Unhandled ElevenLabs event type: ${type}`);
-        logger.debug('Event data:', JSON.stringify(event, null, 2));
     }
 
   } catch (error) {
     logger.error('Error processing ElevenLabs event:', error);
-    logger.error('Event data:', JSON.stringify(event, null, 2));
+  }
+}
+
+/**
+ * Gestisce il webhook post_call_transcription
+ * Salva la trascrizione nel database
+ */
+async function handlePostCallTranscription(data, eventTimestamp) {
+  try {
+    const {
+      conversation_id,
+      agent_id,
+      transcript,
+      metadata,
+      analysis,
+      user_id
+    } = data;
+
+    logger.info('Processing post-call transcription', {
+      conversation_id,
+      transcript_length: transcript?.length || 0,
+      duration: metadata?.call_duration_secs
+    });
+
+    if (!transcript || transcript.length === 0) {
+      logger.warn('Empty transcript received', { conversation_id });
+      return;
+    }
+
+    // Estrai il numero di telefono dall'user_id o metadata
+    let phoneNumber = user_id;
+    
+    // Se user_id contiene il prefisso whatsapp:, rimuovilo
+    if (phoneNumber && phoneNumber.startsWith('whatsapp:')) {
+      phoneNumber = phoneNumber.replace('whatsapp:', '').replace('+', '');
+    } else if (phoneNumber && phoneNumber.startsWith('+')) {
+      phoneNumber = phoneNumber.replace('+', '');
+    }
+
+    // Cerca l'utente nel database
+    let dbUser = null;
+    if (phoneNumber) {
+      dbUser = await databaseService.getUserByPhone(phoneNumber);
+    }
+
+    if (!dbUser) {
+      logger.warn('Could not find user for transcript', { 
+        user_id, 
+        phoneNumber,
+        conversation_id 
+      });
+      // Prova a salvare comunque con user_id null
+    }
+
+    // Prepara i dati della trascrizione
+    const transcriptData = {
+      elevenLabsConversationId: conversation_id,
+      direction: 'inbound', // Le chiamate WhatsApp sono tipicamente inbound
+      durationSeconds: metadata?.call_duration_secs || null,
+      transcript: {
+        messages: transcript.map(t => ({
+          role: t.role === 'agent' ? 'assistant' : 'user',
+          message: t.message,
+          time_in_call_secs: t.time_in_call_secs
+        })),
+        analysis: analysis,
+        metadata: metadata
+      },
+      summary: analysis?.transcript_summary || null,
+      startedAt: metadata?.start_time_unix_secs 
+        ? new Date(metadata.start_time_unix_secs * 1000) 
+        : null,
+      endedAt: eventTimestamp 
+        ? new Date(eventTimestamp * 1000) 
+        : new Date()
+    };
+
+    // Salva nel database
+    if (dbUser) {
+      const saved = await databaseService.saveCallTranscript(dbUser.id, transcriptData);
+      
+      if (saved) {
+        logger.info('Call transcript saved successfully', {
+          transcript_id: saved.id,
+          user_id: dbUser.id,
+          conversation_id,
+          messages_count: transcript.length
+        });
+      }
+    } else {
+      logger.warn('Transcript not saved - user not found', { conversation_id });
+    }
+
+  } catch (error) {
+    logger.error('Error handling post-call transcription:', error);
   }
 }
 
