@@ -395,7 +395,35 @@ ESEMPI:
           type: 'text'
         });
 
-        logger.info(`Text message logged for ${from} (${dbUser?.name || 'unknown'}), ElevenLabs will respond`);
+        logger.info(`Text message received from ${from} (${dbUser?.name || 'unknown'}), generating response with context`);
+
+        // Recupera contesto conversazione (ultimi 20 messaggi)
+        let conversationHistory = [];
+        if (dbConversation) {
+          conversationHistory = await databaseService.getMessagesForContext(dbConversation.id, 20);
+          logger.info(`Retrieved ${conversationHistory.length} messages for context`);
+        }
+
+        // Genera risposta con GPT (con contesto)
+        const responseText = await openaiService.getResponse(from, text.body, conversationHistory);
+        logger.info(`GPT response generated: "${responseText.substring(0, 50)}..."`);
+
+        // Salva risposta nel database
+        if (dbConversation && dbUser) {
+          await databaseService.saveMessage(
+            dbConversation.id,
+            dbUser.id,
+            'assistant',
+            responseText,
+            'text',
+            { source: 'gpt-with-context' }
+          );
+        }
+
+        // Invia risposta testuale
+        await whatsappService.sendTextMessage(from, responseText);
+        logger.info(`Text response sent to ${from}`);
+
         return;
       }
 
