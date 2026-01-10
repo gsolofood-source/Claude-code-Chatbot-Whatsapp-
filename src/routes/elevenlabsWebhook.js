@@ -126,12 +126,15 @@ async function handlePostCallTranscription(data, eventTimestamp) {
       user_id
     } = data;
 
-    logger.info('Processing post-call transcription', {
+    // Log completo del payload per debug
+    logger.info('Post-call transcription data received', {
       conversation_id,
+      agent_id,
+      user_id: user_id || 'NOT PROVIDED',
       transcript_length: transcript?.length || 0,
       duration: metadata?.call_duration_secs,
-      user_id_received: user_id,
-      metadata_keys: metadata ? Object.keys(metadata) : []
+      metadata_keys: metadata ? Object.keys(metadata) : [],
+      has_analysis: !!analysis
     });
 
     if (!transcript || transcript.length === 0) {
@@ -139,59 +142,78 @@ async function handlePostCallTranscription(data, eventTimestamp) {
       return;
     }
 
-    // Estrai il numero di telefono dall'user_id o metadata
-    let phoneNumber = user_id;
+    // Estrai il numero di telefono da varie fonti possibili
+    let phoneNumber = null;
     
-    // Prova anche a cercare nei metadata se user_id non c'è
+    // 1. Prova da user_id
+    if (user_id) {
+      phoneNumber = user_id;
+      logger.info('Phone from user_id', { phoneNumber });
+    }
+    
+    // 2. Prova da metadata
     if (!phoneNumber && metadata) {
-      phoneNumber = metadata.phone_number || metadata.to || metadata.from || metadata.caller_id;
+      phoneNumber = metadata.phone_number || metadata.to || metadata.from || metadata.caller_id || metadata.customer_number;
+      if (phoneNumber) {
+        logger.info('Phone from metadata', { phoneNumber });
+      }
     }
 
-    logger.info('Phone number extraction', {
-      original_user_id: user_id,
-      extracted_phone: phoneNumber
-    });
-    
-    // Pulisci il numero di telefono
+    // 3. Prova da conversation_initiation_client_data (dynamic variables)
+    if (!phoneNumber && data.conversation_initiation_client_data?.dynamic_variables) {
+      const dynVars = data.conversation_initiation_client_data.dynamic_variables;
+      phoneNumber = dynVars.phone_number || dynVars.phone || dynVars.caller_id;
+      if (phoneNumber) {
+        logger.info('Phone from dynamic_variables', { phoneNumber });
+      }
+    }
+
+    // Pulisci il numero di telefono se trovato
     if (phoneNumber) {
-      // Rimuovi prefissi comuni
       phoneNumber = phoneNumber
+        .toString()
         .replace('whatsapp:', '')
         .replace('tel:', '')
         .replace('+', '')
-        .replace(/\s/g, ''); // rimuovi spazi
+        .replace(/\s/g, '');
+      logger.info('Cleaned phone number', { phoneNumber });
+    } else {
+      logger.warn('No phone number found in webhook payload');
     }
-
-    logger.info('Cleaned phone number', { phoneNumber });
 
     // Cerca l'utente nel database
     let dbUser = null;
     if (phoneNumber) {
       dbUser = await databaseService.getUserByPhone(phoneNumber);
       
-      // Se non trovato, prova senza il prefisso del paese (es: 39 per Italia)
+      // Se non trovato, prova varianti
       if (!dbUser && phoneNumber.startsWith('39')) {
         dbUser = await databaseService.getUserByPhone(phoneNumber.substring(2));
       }
-      // Prova anche con il prefisso se non c'è
-      if (!dbUser && !phoneNumber.startsWith('39')) {
+      if (!dbUser && !phoneNumber.startsWith('39') && phoneNumber.length < 12) {
         dbUser = await databaseService.getUserByPhone('39' + phoneNumber);
       }
     }
 
+    // Se ancora non troviamo l'utente, prova a trovare l'ultimo utente attivo
     if (!dbUser) {
-      logger.warn('Could not find user for transcript', { 
-        user_id, 
-        phoneNumber,
-        conversation_id 
-      });
-      // Prova a salvare comunque con user_id null
+      logger.warn('Could not find user by phone, trying last active user');
+      // Cerca l'ultimo utente che ha avuto una conversazione attiva
+      const lastActiveUser = await databaseService.query(
+        `SELECT u.* FROM users u 
+         JOIN conversations c ON c.user_id = u.id 
+         ORDER BY c.updated_at DESC LIMIT 1`
+      );
+      if (lastActiveUser.rows && lastActiveUser.rows.length > 0) {
+        dbUser = lastActiveUser.rows[0];
+        logger.info('Found last active user', { user_id: dbUser.id, phone: dbUser.phone_number });
+      }
     }
 
     // Prepara i dati della trascrizione
     const transcriptData = {
       elevenLabsConversationId: conversation_id,
-      direction: 'inbound', // Le chiamate WhatsApp sono tipicamente inbound
+      direction: 'inbound',
       durationSeconds: metadata?.call_duration_secs || null,
       transcript: {
         messages: transcript.map(t => ({
@@ -211,7 +233,7 @@ async function handlePostCallTranscription(data, eventTimestamp) {
         : new Date()
     };
 
-    // Salva nel database
+    // Salva nel database (anche senza utente se necessario)
     if (dbUser) {
       const saved = await databaseService.saveCallTranscript(dbUser.id, transcriptData);
       
@@ -224,7 +246,10 @@ async function handlePostCallTranscription(data, eventTimestamp) {
         });
       }
     } else {
-      logger.warn('Transcript not saved - user not found', { conversation_id });
+      logger.warn('Transcript not saved - no user found', { 
+        conversation_id,
+        attempted_phone: phoneNumber
+      });
     }
 
   } catch (error) {
