@@ -11,27 +11,37 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface ChatLog {
-  userId: string;
-  messageType: string;
-  content: string;
+  id: number | string;
+  conversationId: number | string;
+  userId: number | string;
+  userName: string;
+  phone: string;
   role: string;
+  type: string;
+  content: string;
   timestamp: string;
-  metadata?: {
-    from?: string;
-    to?: string;
-    messageId?: string;
-  };
+  processingTimeMs: number | null;
 }
 
 interface ChatLogStats {
   totalMessages: number;
   uniqueUsers: number;
   timeRange: number;
+  messagesByType?: {
+    text: number;
+    audio: number;
+    image: number;
+  };
+  messagesBySender?: {
+    user: number;
+    bot: number;
+  };
   users: {
-    userId: string;
+    userId: number | string;
+    userName: string;
+    phone: string;
     messageCount: number;
     lastMessage: string;
-    firstMessage: string;
   }[];
 }
 
@@ -68,16 +78,18 @@ export default function ChatLogsPage() {
   }, [fetchData]);
 
   const filteredLogs = logs.filter((log) => {
+    const userIdStr = String(log.userId);
     const matchesSearch =
-      log.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.userId.includes(searchQuery);
+      (log.content?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      userIdStr.includes(searchQuery) ||
+      (log.userName?.toLowerCase() || "").includes(searchQuery.toLowerCase());
 
-    const matchesUser = selectedUser === "all" || log.userId === selectedUser;
+    const matchesUser = selectedUser === "all" || userIdStr === selectedUser;
 
     return matchesSearch && matchesUser;
   });
 
-  const uniqueUsers = Array.from(new Set(logs.map(log => log.userId)));
+  const uniqueUsers = Array.from(new Set(logs.map(log => String(log.userId))));
 
   return (
     <div className="space-y-8">
@@ -189,11 +201,15 @@ export default function ChatLogsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutti gli utenti</SelectItem>
-                  {uniqueUsers.map((userId) => (
-                    <SelectItem key={userId} value={userId}>
-                      {userId.substring(0, 15)}...
-                    </SelectItem>
-                  ))}
+                  {uniqueUsers.map((userId) => {
+                    const log = logs.find(l => String(l.userId) === userId);
+                    const displayName = log?.userName || `Utente ${userId}`;
+                    return (
+                      <SelectItem key={userId} value={userId}>
+                        {displayName}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -267,23 +283,19 @@ export default function ChatLogsPage() {
                             {log.role === "user" ? "Utente" : "Bot"}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
-                            {log.userId.substring(0, 20)}...
+                            {log.userName || `Utente ${log.userId}`}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            • {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true, locale: undefined })}
+                            • {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
                           </span>
                         </div>
 
                         <p className="text-sm">{log.content || "(nessun contenuto)"}</p>
 
-                        {log.metadata && (
-                          <div className="flex gap-2 text-xs text-muted-foreground">
-                            {log.metadata.messageId && (
-                              <span>ID: {log.metadata.messageId.substring(0, 15)}...</span>
-                            )}
-                            <span>Tipo: {log.messageType}</span>
-                          </div>
-                        )}
+                        <div className="flex gap-2 text-xs text-muted-foreground">
+                          <span>Tipo: {log.type}</span>
+                          {log.phone && <span>• Tel: {log.phone}</span>}
+                        </div>
                       </div>
                     </div>
 
@@ -308,13 +320,13 @@ export default function ChatLogsPage() {
           <CardContent>
             <div className="space-y-3">
               {stats.users.slice(0, 10).map((user, index) => (
-                <div key={user.userId} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div key={String(user.userId)} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-medium">
                       {index + 1}
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{user.userId.substring(0, 25)}...</p>
+                      <p className="text-sm font-medium">{user.userName}</p>
                       <p className="text-xs text-muted-foreground">
                         Ultimo: {formatDistanceToNow(new Date(user.lastMessage), { addSuffix: true })}
                       </p>

@@ -11,15 +11,17 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface Conversation {
-  id: string;
-  userId: string;
+  id: string | number;
+  userId: string | number;
   userName: string;
+  phone?: string;
   lastMessage: string;
   timestamp: string;
-  status: "active" | "completed";  // ← cambia da string
+  status: "active" | "ended" | string;
   unread: boolean;
   messageCount: number;
-  type: "text" | "audio";          // ← cambia da string
+  type: string;
+  lastSender?: string;
 }
 
 interface Message {
@@ -95,11 +97,11 @@ export default function ConversationsPage() {
   }, [selectedId]);
 
   const filteredConversations = conversations.filter((conv) =>
-    conv.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.userId.includes(searchQuery)
+    (conv.userName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+    String(conv.userId).includes(searchQuery)
   );
 
-  const selectedConversation = conversations.find((c) => c.id === selectedId);
+  const selectedConversation = conversations.find((c) => String(c.id) === selectedId);
   const messages = conversationDetails?.messages || [];
 
   return (
