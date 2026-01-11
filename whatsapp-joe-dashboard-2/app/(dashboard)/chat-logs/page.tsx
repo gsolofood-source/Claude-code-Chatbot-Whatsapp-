@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ export default function ChatLogsPage() {
   const [hours, setHours] = useState("15");
   const [selectedUser, setSelectedUser] = useState<string | "all">("all");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [logsRes, statsRes] = await Promise.all([
@@ -61,11 +61,11 @@ export default function ChatLogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [hours]);
 
   useEffect(() => {
     fetchData();
-  }, [hours]);
+  }, [fetchData]);
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch =

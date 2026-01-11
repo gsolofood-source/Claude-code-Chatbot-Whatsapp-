@@ -169,7 +169,7 @@ export default function SettingsPage() {
         <TabsContent value="personality" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Joe's Personality Settings</CardTitle>
+              <CardTitle>Joe&apos;s Personality Settings</CardTitle>
               <CardDescription>
                 Customize how Joe responds to users
               </CardDescription>
@@ -216,7 +216,7 @@ export default function SettingsPage() {
                   <option value="detailed">Detailed</option>
                 </select>
                 <p className="text-sm text-muted-foreground">
-                  How verbose Joe's responses should be
+                  How verbose Joe&apos;s responses should be
                 </p>
               </div>
             </CardContent>
