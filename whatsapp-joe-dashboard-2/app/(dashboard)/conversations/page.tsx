@@ -25,27 +25,36 @@ interface Conversation {
 }
 
 interface Message {
-  id?: string;
+  id: string | number;
+  sender: string;  // "user" | "bot"
+  type: string;
   content: string;
-  role: string;
+  audioTranscript?: string | null;
+  audioDuration?: number | null;
   timestamp: string;
-  sender?: string;
+  processingTimeMs?: number | null;
 }
 
-interface ConversationDetails {
-  userId: string;
+interface ConversationApiResponse {
+  success: boolean;
+  conversation: {
+    id: string | number;
+    userId: string | number;
+    userName: string;
+    phone: string;
+    startedAt: string;
+    status: string;
+    summary?: string | null;
+    messageCount: number;
+  };
   messages: Message[];
-  messageCount: number;
-  createdAt: string;
-  lastActivity: string;
-  sessionId?: string;
 }
 
 export default function ConversationsPage() {
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [conversationDetails, setConversationDetails] = useState<ConversationDetails | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
@@ -63,20 +72,20 @@ export default function ConversationsPage() {
     }
   };
 
-  const fetchConversationDetails = async (userId: string) => {
+  const fetchConversationDetails = async (conversationId: string) => {
     setLoadingDetails(true);
     try {
-      const response = await fetch(`/api/conversations?userId=${userId}`);
-      const data = await response.json();
+      const response = await fetch(`/api/conversations/${conversationId}`);
+      const data: ConversationApiResponse = await response.json();
 
-      if (data.success && data.conversation) {
-        setConversationDetails(data.conversation);
+      if (data.success && data.messages) {
+        setMessages(data.messages);
       } else {
-        setConversationDetails(null);
+        setMessages([]);
       }
     } catch (error) {
       console.error("Error fetching conversation details:", error);
-      setConversationDetails(null);
+      setMessages([]);
     } finally {
       setLoadingDetails(false);
     }
@@ -92,7 +101,7 @@ export default function ConversationsPage() {
     if (selectedId) {
       fetchConversationDetails(selectedId);
     } else {
-      setConversationDetails(null);
+      setMessages([]);
     }
   }, [selectedId]);
 
@@ -102,7 +111,6 @@ export default function ConversationsPage() {
   );
 
   const selectedConversation = conversations.find((c) => String(c.id) === selectedId);
-  const messages = conversationDetails?.messages || [];
 
   return (
     <div className="space-y-8">
@@ -224,36 +232,44 @@ export default function ConversationsPage() {
                       <div className="text-muted-foreground">No messages yet</div>
                     </div>
                   ) : (
-                    messages.map((message, index) => (
-                      <div
-                        key={message.id || index}
-                        className={cn(
-                          "flex",
-                          (message.sender === "user" || message.role === "user") ? "justify-start" : "justify-end"
-                        )}
-                      >
+                    messages.map((message) => {
+                      const isUser = message.sender === "user";
+                      return (
                         <div
+                          key={String(message.id)}
                           className={cn(
-                            "max-w-[70%] rounded-lg p-3",
-                            (message.sender === "user" || message.role === "user")
-                              ? "bg-muted"
-                              : "bg-primary text-primary-foreground"
+                            "flex",
+                            isUser ? "justify-start" : "justify-end"
                           )}
                         >
-                          <p className="text-sm">{message.content}</p>
-                          <p
+                          <div
                             className={cn(
-                              "text-xs mt-1",
-                              (message.sender === "user" || message.role === "user")
-                                ? "text-muted-foreground"
-                                : "text-primary-foreground/70"
+                              "max-w-[70%] rounded-lg p-3",
+                              isUser
+                                ? "bg-muted"
+                                : "bg-primary text-primary-foreground"
                             )}
                           >
-                            {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                          </p>
+                            <p className="text-sm">{message.content}</p>
+                            {message.audioTranscript && (
+                              <p className="text-xs italic mt-1 opacity-80">
+                                (Audio: {message.audioTranscript})
+                              </p>
+                            )}
+                            <p
+                              className={cn(
+                                "text-xs mt-1",
+                                isUser
+                                  ? "text-muted-foreground"
+                                  : "text-primary-foreground/70"
+                              )}
+                            >
+                              {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 

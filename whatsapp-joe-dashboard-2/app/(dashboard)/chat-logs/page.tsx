@@ -256,9 +256,9 @@ export default function ChatLogsPage() {
             </div>
           ) : (
             <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {filteredLogs.map((log, index) => (
+              {filteredLogs.map((log) => (
                 <div
-                  key={index}
+                  key={String(log.id)}
                   className={cn(
                     "p-4 rounded-lg border transition-colors hover:bg-muted/50",
                     log.role === "user" ? "border-l-4 border-l-blue-500" : "border-l-4 border-l-green-500"
