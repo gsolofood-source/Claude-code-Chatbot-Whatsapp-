@@ -6,6 +6,7 @@ export async function GET() {
       status: "ok",
       timestamp: new Date().toISOString(),
       service: "whatsapp-joe-dashboard",
+      version: "2.0.1",
     },
     { status: 200 }
   );

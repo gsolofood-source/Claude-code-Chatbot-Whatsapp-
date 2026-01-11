@@ -6,15 +6,16 @@ import { MessageSquare, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Conversation {
-  id: string;
-  userId: string;
+  id: string | number;
+  userId: string | number;
   userName: string;
+  phone?: string;
   lastMessage: string;
   timestamp: string;
-  status: "active" | "completed";
+  status: "active" | "ended" | string;
   unread: boolean;
   messageCount: number;
-  type: "text" | "audio";
+  type: string;
 }
 
 interface ConversationListProps {
@@ -26,15 +27,17 @@ interface ConversationListProps {
 export function ConversationList({ conversations, selectedId, onSelect }: ConversationListProps) {
   return (
     <div className="space-y-2">
-      {conversations.map((conversation) => (
+      {conversations.map((conversation) => {
+        const convId = String(conversation.id);
+        return (
         <Card
-          key={conversation.id}
+          key={convId}
           className={cn(
             "p-4 cursor-pointer transition-colors hover:bg-accent",
-            selectedId === conversation.id && "bg-accent",
+            selectedId === convId && "bg-accent",
             conversation.unread && "border-primary"
           )}
-          onClick={() => onSelect(conversation.id)}
+          onClick={() => onSelect(convId)}
         >
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
@@ -45,7 +48,7 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
                 )}
               </div>
               <p className="text-xs text-muted-foreground truncate mt-0.5">
-                {conversation.userId}
+                {conversation.phone || `ID: ${conversation.userId}`}
               </p>
               <div className="flex items-center gap-2 mt-2">
                 {conversation.type === "audio" ? (
@@ -76,7 +79,8 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
             </div>
           </div>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }
