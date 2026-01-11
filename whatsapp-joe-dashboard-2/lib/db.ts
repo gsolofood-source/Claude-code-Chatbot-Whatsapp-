@@ -61,62 +61,94 @@ export function safeInt(value: unknown, min: number, max: number, defaultValue: 
   return Math.max(min, Math.min(max, Math.floor(num)));
 }
 
-// Types for database tables
+// Types for database tables - matching actual Railway database structure
+
 export interface DBUser {
   id: number;
   phone_number: string;
   name: string | null;
+  first_seen: Date;
+  last_seen: Date;
+  total_messages: number;
+  total_conversations: number;
+  preferences: unknown;
+  metadata: unknown;
   created_at: Date;
   updated_at: Date;
-  last_interaction: Date;
-  openai_thread_id: string | null;
 }
 
 export interface DBConversation {
   id: number;
   user_id: number;
-  influencer_id: number;
+  openai_thread_id: string | null;
+  elevenlabs_session_id: string | null;
   started_at: Date;
   ended_at: Date | null;
-  status: string;
+  is_active: boolean;
+  message_count: number;
+  summary: string | null;
+  metadata: unknown;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface DBMessage {
   id: number;
   conversation_id: number;
-  sender: "user" | "bot";
-  message_type: "text" | "audio" | "image";
+  user_id: number;
+  role: "user" | "assistant";
   content: string;
-  audio_url: string | null;
+  message_type: "text" | "audio" | "image";
+  audio_duration_seconds: number | null;
+  audio_transcript: string | null;
+  image_analysis: string | null;
+  whatsapp_message_id: string | null;
+  processing_time_ms: number | null;
+  metadata: unknown;
   created_at: Date;
-  response_time_ms: number | null;
 }
 
 export interface DBInfluencer {
   id: number;
   name: string;
-  phone_number_id: string;
-  voice_id: string;
-  agent_id: string;
+  slug: string;
+  whatsapp_phone_number: string;
+  whatsapp_phone_id: string;
+  openai_assistant_id: string;
+  elevenlabs_voice_id: string;
+  elevenlabs_agent_id: string;
   system_prompt: string;
+  persona_description: string | null;
+  is_active: boolean;
+  subscription_tier: string | null;
+  metadata: unknown;
   created_at: Date;
+  updated_at: Date;
 }
 
 export interface DBCallTranscript {
   id: number;
   user_id: number;
-  conversation_id: string;
-  transcript: string;
-  call_duration_seconds: number;
-  call_started_at: Date;
-  call_ended_at: Date;
+  conversation_id: number;
+  elevenlabs_conversation_id: string | null;
+  whatsapp_call_id: string | null;
+  direction: "inbound" | "outbound";
+  duration_seconds: number;
+  transcript_json: unknown;
+  summary: string | null;
+  started_at: Date;
+  ended_at: Date | null;
   created_at: Date;
 }
 
 export interface DBUserMemory {
   id: number;
   user_id: number;
-  memory_type: string;
-  content: string;
-  extracted_at: Date;
+  fact: string;
+  category: string;
+  confidence: number;
+  source_message_id: number | null;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
 }

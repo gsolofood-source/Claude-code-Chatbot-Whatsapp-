@@ -17,7 +17,8 @@ export async function GET(
       user_name: string;
       phone_number: string;
       started_at: string;
-      status: string;
+      is_active: boolean;
+      summary: string | null;
     }>(`
       SELECT 
         c.id as conversation_id,
@@ -25,7 +26,8 @@ export async function GET(
         COALESCE(u.name, 'Utente Anonimo') as user_name,
         u.phone_number,
         c.started_at,
-        c.status
+        c.is_active,
+        c.summary
       FROM conversations c
       JOIN users u ON u.id = c.user_id
       WHERE c.id = $1
@@ -41,21 +43,23 @@ export async function GET(
     // Get all messages for this conversation
     const messages = await query<{
       id: string;
-      sender: string;
+      role: string;
       message_type: string;
       content: string;
-      audio_url: string | null;
+      audio_transcript: string | null;
+      audio_duration_seconds: string | null;
       created_at: string;
-      response_time_ms: string | null;
+      processing_time_ms: string | null;
     }>(`
       SELECT 
         id,
-        sender,
+        role,
         message_type,
         content,
-        audio_url,
+        audio_transcript,
+        audio_duration_seconds,
         created_at,
-        response_time_ms
+        processing_time_ms
       FROM messages
       WHERE conversation_id = $1
       ORDER BY created_at ASC
@@ -67,45 +71,73 @@ export async function GET(
       '$1 $2****$4'
     );
 
-    // Get call transcripts for this user
+    // Get call transcripts for this conversation
     const callTranscripts = await query<{
       id: string;
-      transcript: string;
-      call_duration_seconds: string;
-      call_started_at: string;
-      call_ended_at: string;
+      direction: string;
+      duration_seconds: string;
+      transcript_json: string;
+      summary: string | null;
+      started_at: string;
+      ended_at: string | null;
     }>(`
       SELECT 
         id,
-        transcript,
-        call_duration_seconds,
-        call_started_at,
-        call_ended_at
+        direction,
+        duration_seconds,
+        transcript_json::text,
+        summary,
+        started_at,
+        ended_at
       FROM call_transcripts
-      WHERE user_id = $1
-      ORDER BY call_started_at DESC
-    `, [conversation.user_id]);
+      WHERE conversation_id = $1
+      ORDER BY started_at DESC
+    `, [id]);
 
     // Format messages
     const formattedMessages = messages.map(msg => ({
       id: msg.id,
-      sender: msg.sender,
+      sender: msg.role === 'assistant' ? 'bot' : 'user',
       type: msg.message_type,
       content: msg.content,
-      audioUrl: msg.audio_url,
+      audioTranscript: msg.audio_transcript,
+      audioDuration: msg.audio_duration_seconds ? parseInt(msg.audio_duration_seconds) : null,
       timestamp: msg.created_at,
-      responseTimeMs: msg.response_time_ms ? parseInt(msg.response_time_ms) : null,
+      processingTimeMs: msg.processing_time_ms ? parseInt(msg.processing_time_ms) : null,
     }));
 
     // Format call transcripts
-    const formattedCalls = callTranscripts.map(call => ({
-      id: call.id,
-      transcript: call.transcript,
-      durationSeconds: parseInt(call.call_duration_seconds),
-      durationFormatted: `${Math.floor(parseInt(call.call_duration_seconds) / 60)}m ${parseInt(call.call_duration_seconds) % 60}s`,
-      startedAt: call.call_started_at,
-      endedAt: call.call_ended_at,
-    }));
+    const formattedCalls = callTranscripts.map(call => {
+      const durationSeconds = parseInt(call.duration_seconds);
+      
+      // Parse transcript JSON
+      let transcriptText = 'Nessuna trascrizione';
+      try {
+        if (call.transcript_json) {
+          const parsed = JSON.parse(call.transcript_json);
+          if (Array.isArray(parsed)) {
+            transcriptText = parsed.map((item: { role?: string; text?: string; content?: string }) => 
+              `${item.role || 'unknown'}: ${item.text || item.content || ''}`
+            ).join('\n');
+          } else if (typeof parsed === 'string') {
+            transcriptText = parsed;
+          }
+        }
+      } catch {
+        transcriptText = call.summary || 'Nessuna trascrizione';
+      }
+
+      return {
+        id: call.id,
+        direction: call.direction,
+        transcript: transcriptText,
+        summary: call.summary,
+        durationSeconds,
+        durationFormatted: `${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s`,
+        startedAt: call.started_at,
+        endedAt: call.ended_at,
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -115,7 +147,8 @@ export async function GET(
         userName: conversation.user_name,
         phone: maskedPhone,
         startedAt: conversation.started_at,
-        status: conversation.status || 'active',
+        status: conversation.is_active ? 'active' : 'ended',
+        summary: conversation.summary,
         messageCount: messages.length,
       },
       messages: formattedMessages,

@@ -30,8 +30,8 @@ export async function GET() {
 
     // Active users (with activity in last 7 days)
     const activeUsersResult = await queryOne<{ count: string }>(
-      `SELECT COUNT(DISTINCT user_id) as count FROM conversations 
-       WHERE started_at >= NOW() - INTERVAL '7 days'`
+      `SELECT COUNT(DISTINCT user_id) as count FROM messages 
+       WHERE created_at >= NOW() - INTERVAL '7 days'`
     );
     const activeUsers = parseInt(activeUsersResult?.count || "0");
 
@@ -47,25 +47,25 @@ export async function GET() {
     );
     const newUsersThisWeek = parseInt(newUsersThisWeekResult?.count || "0");
 
-    // Average response time
+    // Average response time (processing_time_ms for assistant messages)
     const avgResponseResult = await queryOne<{ avg: string }>(
-      `SELECT ROUND(AVG(response_time_ms)) as avg FROM messages 
-       WHERE sender = 'bot' AND response_time_ms IS NOT NULL`
+      `SELECT ROUND(AVG(processing_time_ms)) as avg FROM messages 
+       WHERE role = 'assistant' AND processing_time_ms IS NOT NULL`
     );
     const avgResponseMs = parseInt(avgResponseResult?.avg || "0");
     const avgResponseTime = avgResponseMs > 1000 
       ? `${(avgResponseMs / 1000).toFixed(1)}s` 
       : `${avgResponseMs}ms`;
 
-    // Total calls
+    // Total calls from call_transcripts table
     const totalCallsResult = await queryOne<{ count: string }>(
       "SELECT COUNT(*) as count FROM call_transcripts"
     );
     const totalCalls = parseInt(totalCallsResult?.count || "0");
 
-    // Total call duration
+    // Total call duration from call_transcripts
     const totalCallDurationResult = await queryOne<{ total: string }>(
-      "SELECT COALESCE(SUM(call_duration_seconds), 0) as total FROM call_transcripts"
+      "SELECT COALESCE(SUM(duration_seconds), 0) as total FROM call_transcripts"
     );
     const totalCallMinutes = Math.round(parseInt(totalCallDurationResult?.total || "0") / 60);
 

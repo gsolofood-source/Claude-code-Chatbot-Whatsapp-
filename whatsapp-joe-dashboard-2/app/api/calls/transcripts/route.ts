@@ -9,17 +9,19 @@ export async function GET(request: Request) {
   const offset = safeInt(searchParams.get("offset"), 0, 10000, 0);
 
   try {
-    // Get call transcripts with user info using parameterized query
+    // Get call transcripts with user info
     const transcripts = await query<{
       id: string;
       user_id: string;
       user_name: string;
       phone_number: string;
       conversation_id: string;
-      transcript: string;
-      call_duration_seconds: string;
-      call_started_at: string;
-      call_ended_at: string;
+      direction: string;
+      duration_seconds: string;
+      transcript_json: string;
+      summary: string | null;
+      started_at: string;
+      ended_at: string | null;
       created_at: string;
     }>(`
       SELECT 
@@ -28,14 +30,16 @@ export async function GET(request: Request) {
         COALESCE(u.name, 'Utente Anonimo') as user_name,
         u.phone_number,
         ct.conversation_id,
-        ct.transcript,
-        ct.call_duration_seconds,
-        ct.call_started_at,
-        ct.call_ended_at,
+        ct.direction,
+        ct.duration_seconds,
+        ct.transcript_json::text,
+        ct.summary,
+        ct.started_at,
+        ct.ended_at,
         ct.created_at
       FROM call_transcripts ct
       JOIN users u ON u.id = ct.user_id
-      ORDER BY ct.call_started_at DESC
+      ORDER BY ct.started_at DESC
       LIMIT $1 OFFSET $2
     `, [limit, offset]);
 
@@ -47,7 +51,7 @@ export async function GET(request: Request) {
 
     // Get total call duration
     const durationResult = await queryOne<{ total: string }>(
-      "SELECT COALESCE(SUM(call_duration_seconds), 0) as total FROM call_transcripts"
+      "SELECT COALESCE(SUM(duration_seconds), 0) as total FROM call_transcripts"
     );
     const totalDurationSeconds = parseInt(durationResult?.total || "0");
     const totalDurationMinutes = Math.round(totalDurationSeconds / 60);
@@ -57,11 +61,28 @@ export async function GET(request: Request) {
 
     // Format transcripts
     const formattedTranscripts = transcripts.map(t => {
-      const durationSeconds = parseInt(t.call_duration_seconds);
+      const durationSeconds = parseInt(t.duration_seconds);
       const maskedPhone = t.phone_number.replace(
         /(\+\d{2})(\d{3})(\d+)(\d{3})/, 
         '$1 $2****$4'
       );
+
+      // Parse transcript JSON if available
+      let transcriptText = 'Nessuna trascrizione disponibile';
+      try {
+        if (t.transcript_json) {
+          const parsed = JSON.parse(t.transcript_json);
+          if (Array.isArray(parsed)) {
+            transcriptText = parsed.map((item: { role?: string; text?: string; content?: string }) => 
+              `${item.role || 'unknown'}: ${item.text || item.content || ''}`
+            ).join('\n');
+          } else if (typeof parsed === 'string') {
+            transcriptText = parsed;
+          }
+        }
+      } catch {
+        transcriptText = t.summary || 'Nessuna trascrizione disponibile';
+      }
 
       return {
         id: t.id,
@@ -69,13 +90,15 @@ export async function GET(request: Request) {
         userName: t.user_name,
         phone: maskedPhone,
         conversationId: t.conversation_id,
-        transcript: t.transcript,
+        direction: t.direction,
+        transcript: transcriptText,
+        summary: t.summary,
         duration: {
           seconds: durationSeconds,
           formatted: `${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s`,
         },
-        startedAt: t.call_started_at,
-        endedAt: t.call_ended_at,
+        startedAt: t.started_at,
+        endedAt: t.ended_at,
         createdAt: t.created_at,
       };
     });

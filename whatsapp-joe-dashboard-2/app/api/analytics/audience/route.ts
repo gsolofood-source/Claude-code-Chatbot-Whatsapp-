@@ -13,7 +13,7 @@ export async function GET() {
 
     // Active users (last 7 days)
     const activeUsersResult = await queryOne<{ count: string }>(
-      "SELECT COUNT(*) as count FROM users WHERE last_interaction >= NOW() - INTERVAL '7 days'"
+      "SELECT COUNT(*) as count FROM users WHERE last_seen >= NOW() - INTERVAL '7 days'"
     );
     const activeUsers = parseInt(activeUsersResult?.count || "0");
 
@@ -32,51 +32,41 @@ export async function GET() {
       ? Math.round(((newUsers - lastWeekUsers) / lastWeekUsers) * 100) 
       : 0;
 
-    // Users by activity level
+    // Users by activity level (using total_messages from users table)
+    // Must repeat CASE in GROUP BY - PostgreSQL doesn't allow alias in GROUP BY
     const usersByActivity = await query<{ 
       activity_level: string; 
       count: string 
     }>(`
       SELECT 
         CASE 
-          WHEN msg_count >= 50 THEN 'super_active'
-          WHEN msg_count >= 20 THEN 'active'
-          WHEN msg_count >= 5 THEN 'moderate'
+          WHEN total_messages >= 50 THEN 'super_active'
+          WHEN total_messages >= 20 THEN 'active'
+          WHEN total_messages >= 5 THEN 'moderate'
           ELSE 'casual'
         END as activity_level,
         COUNT(*) as count
-      FROM (
-        SELECT u.id, COUNT(m.id) as msg_count
-        FROM users u
-        LEFT JOIN conversations c ON c.user_id = u.id
-        LEFT JOIN messages m ON m.conversation_id = c.id AND m.sender = 'user'
-        GROUP BY u.id
-      ) user_messages
-      GROUP BY activity_level
+      FROM users
+      GROUP BY 
+        CASE 
+          WHEN total_messages >= 50 THEN 'super_active'
+          WHEN total_messages >= 20 THEN 'active'
+          WHEN total_messages >= 5 THEN 'moderate'
+          ELSE 'casual'
+        END
     `);
 
     // Average messages per user
     const avgMessagesResult = await queryOne<{ avg: string }>(`
-      SELECT ROUND(AVG(msg_count), 1) as avg
-      FROM (
-        SELECT u.id, COUNT(m.id) as msg_count
-        FROM users u
-        LEFT JOIN conversations c ON c.user_id = u.id
-        LEFT JOIN messages m ON m.conversation_id = c.id
-        GROUP BY u.id
-      ) user_messages
+      SELECT ROUND(AVG(total_messages)::numeric, 1) as avg FROM users
     `);
     const avgMessagesPerUser = parseFloat(avgMessagesResult?.avg || "0");
 
-    // Returning users rate
+    // Returning users rate (users with more than 1 conversation)
     const returningUsersResult = await queryOne<{ count: string }>(`
       SELECT COUNT(*) as count
       FROM users
-      WHERE (
-        SELECT COUNT(DISTINCT DATE(c.started_at))
-        FROM conversations c
-        WHERE c.user_id = users.id
-      ) > 1
+      WHERE total_conversations > 1
     `);
     const returningUsers = parseInt(returningUsersResult?.count || "0");
     const returnRate = totalUsers > 0 

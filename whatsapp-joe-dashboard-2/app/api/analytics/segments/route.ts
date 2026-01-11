@@ -1,210 +1,191 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, queryOne } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-// Segment definitions based on conversation content
-const SEGMENT_DEFINITIONS = {
-  aspiring_restaurateur: {
-    name: 'Aspiranti Ristoratori',
-    description: 'Utenti che vogliono aprire un ristorante',
-    keywords: ['aprire', 'ristorante', 'avviare', 'attività', 'locale', 'investire', 'business plan'],
-    icon: '🍽️',
+// Segment definitions based on keywords and behavior
+const SEGMENT_KEYWORDS: Record<string, { keywords: string[]; emoji: string; description: string }> = {
+  'aspiranti_ristoratori': {
+    keywords: ['aprire', 'avviare', 'nuovo ristorante', 'primo ristorante', 'sogno', 'iniziare'],
+    emoji: '🍽️',
+    description: 'Utenti interessati ad aprire un ristorante',
   },
-  existing_owner: {
-    name: 'Ristoratori Attivi',
-    description: 'Proprietari di ristoranti esistenti',
-    keywords: ['mio ristorante', 'mio locale', 'gestisco', 'ho un', 'il mio', 'staff', 'dipendenti'],
-    icon: '👨‍🍳',
+  'ristoratori_attivi': {
+    keywords: ['mio ristorante', 'mio locale', 'gestisco', 'i miei clienti', 'il mio staff'],
+    emoji: '👨‍🍳',
+    description: 'Proprietari di ristoranti attivi',
   },
-  wine_enthusiast: {
-    name: 'Appassionati di Vino',
-    description: 'Interessati al mondo del vino',
-    keywords: ['vino', 'vini', 'cantina', 'sommelier', 'degustazione', 'barolo', 'champagne'],
-    icon: '🍷',
+  'appassionati_vino': {
+    keywords: ['vino', 'vini', 'cantina', 'sommelier', 'degustazione', 'annata'],
+    emoji: '🍷',
+    description: 'Appassionati di vino e enologia',
   },
-  food_lover: {
-    name: 'Food Lovers',
+  'food_lovers': {
+    keywords: ['ricetta', 'cucinare', 'ingredienti', 'piatto', 'cuoco', 'chef'],
+    emoji: '🍕',
     description: 'Appassionati di cucina e cibo',
-    keywords: ['ricetta', 'cucinare', 'piatto', 'ingredienti', 'chef', 'cucina', 'gastronomia'],
-    icon: '🍕',
   },
-  investor: {
-    name: 'Potenziali Investitori',
-    description: 'Interessati a investimenti nel food',
-    keywords: ['investimento', 'capitale', 'ritorno', 'franchising', 'partnership', 'quote'],
-    icon: '💰',
+  'potenziali_investitori': {
+    keywords: ['investire', 'investimento', 'capitale', 'soci', 'business plan', 'roi'],
+    emoji: '💰',
+    description: 'Interessati a investimenti nel settore food',
   },
-  career_seeker: {
-    name: 'Cercatori di Carriera',
-    description: 'Interessati a lavorare nella ristorazione',
-    keywords: ['lavorare', 'lavoro', 'carriera', 'stage', 'esperienza', 'curriculum', 'assunzione'],
-    icon: '💼',
+  'cercatori_carriera': {
+    keywords: ['lavorare', 'lavoro', 'carriera', 'assunzione', 'cv', 'esperienza'],
+    emoji: '💼',
+    description: 'Cercano opportunità lavorative nel settore',
   },
-  event_planner: {
-    name: 'Organizzatori Eventi',
-    description: 'Interessati a catering e eventi',
-    keywords: ['evento', 'catering', 'matrimonio', 'festa', 'cena privata', 'location'],
-    icon: '🎉',
+  'organizzatori_eventi': {
+    keywords: ['evento', 'matrimonio', 'festa', 'catering', 'cena privata', 'compleanno'],
+    emoji: '🎉',
+    description: 'Organizzano eventi e cercano catering',
   },
-  fan: {
-    name: 'Fan & Followers',
-    description: 'Fan generici interessati al personaggio',
-    keywords: ['masterchef', 'tv', 'libro', 'programma', 'ammiro', 'seguo', 'fan'],
-    icon: '⭐',
+  'fan_followers': {
+    keywords: ['fan', 'ammiro', 'masterchef', 'programma', 'libro', 'autografo'],
+    emoji: '⭐',
+    description: 'Fan di Joe Bastianich',
   },
 };
 
-function detectSegments(messages: string[]): string[] {
-  const combinedText = messages.join(' ').toLowerCase();
-  const detectedSegments: string[] = [];
-
-  for (const [segmentId, segment] of Object.entries(SEGMENT_DEFINITIONS)) {
-    const matchCount = segment.keywords.filter(kw => combinedText.includes(kw)).length;
-    if (matchCount >= 2) { // At least 2 keyword matches
-      detectedSegments.push(segmentId);
+function detectSegments(content: string): string[] {
+  const lowerContent = content.toLowerCase();
+  const segments: string[] = [];
+  
+  for (const [segment, config] of Object.entries(SEGMENT_KEYWORDS)) {
+    if (config.keywords.some(kw => lowerContent.includes(kw))) {
+      segments.push(segment);
     }
   }
-
-  return detectedSegments.length > 0 ? detectedSegments : ['fan'];
+  
+  return segments;
 }
 
 export async function GET() {
   try {
-    // Get all users with their messages
-    const userMessages = await query<{
+    // Get all user messages
+    const messages = await query<{
       user_id: string;
-      name: string;
-      phone_number: string;
-      messages: string;
-      message_count: string;
-      call_count: string;
-      last_interaction: string;
+      content: string;
     }>(`
-      SELECT 
-        u.id as user_id,
-        COALESCE(u.name, 'Utente Anonimo') as name,
-        u.phone_number,
-        STRING_AGG(m.content, ' ') as messages,
-        COUNT(m.id) as message_count,
-        COALESCE(ct.call_count, 0) as call_count,
-        MAX(m.created_at) as last_interaction
-      FROM users u
-      LEFT JOIN conversations c ON c.user_id = u.id
-      LEFT JOIN messages m ON m.conversation_id = c.id AND m.sender = 'user' AND m.message_type = 'text'
-      LEFT JOIN (
-        SELECT user_id, COUNT(*) as call_count
-        FROM call_transcripts
-        GROUP BY user_id
-      ) ct ON ct.user_id = u.id
-      GROUP BY u.id, u.name, u.phone_number, ct.call_count
-      HAVING COUNT(m.id) >= 3
+      SELECT user_id, content
+      FROM messages
+      WHERE role = 'user'
+        AND message_type = 'text'
     `);
 
-    // Segment users
+    // Analyze segments per user
+    const userSegments: Record<string, Set<string>> = {};
     const segmentCounts: Record<string, number> = {};
-    const segmentUsers: Record<string, Array<{
-      userId: string;
-      name: string;
-      phone: string;
-      messageCount: number;
-      callCount: number;
-      lastInteraction: string;
-      leadScore: number;
-    }>> = {};
-
-    for (const user of userMessages) {
-      const userMsgs = user.messages ? [user.messages] : [];
-      const segments = detectSegments(userMsgs);
+    
+    for (const msg of messages) {
+      const segments = detectSegments(msg.content);
       
-      const messageCount = parseInt(user.message_count);
-      const callCount = parseInt(user.call_count);
+      if (!userSegments[msg.user_id]) {
+        userSegments[msg.user_id] = new Set();
+      }
       
-      // Calculate lead score (0-100)
-      // Higher score = more valuable lead for partnerships
-      let leadScore = 0;
-      leadScore += Math.min(messageCount * 2, 30); // Max 30 points for messages
-      leadScore += Math.min(callCount * 10, 20); // Max 20 points for calls
-      
-      // Bonus for high-value segments
-      if (segments.includes('investor')) leadScore += 25;
-      if (segments.includes('existing_owner')) leadScore += 20;
-      if (segments.includes('aspiring_restaurateur')) leadScore += 15;
-      if (segments.includes('event_planner')) leadScore += 15;
-
-      // Mask phone
-      const maskedPhone = user.phone_number.replace(/(\+\d{2})(\d{3})(\d+)(\d{3})/, '$1 $2****$4');
-
       for (const segment of segments) {
-        segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
-        
-        if (!segmentUsers[segment]) {
-          segmentUsers[segment] = [];
-        }
-        
-        segmentUsers[segment].push({
-          userId: user.user_id,
-          name: user.name,
-          phone: maskedPhone,
-          messageCount,
-          callCount,
-          lastInteraction: user.last_interaction,
-          leadScore: Math.min(leadScore, 100),
-        });
+        userSegments[msg.user_id].add(segment);
       }
     }
 
-    // Sort users within each segment by lead score
-    for (const segment of Object.keys(segmentUsers)) {
-      segmentUsers[segment].sort((a, b) => b.leadScore - a.leadScore);
+    // Count users per segment
+    for (const segments of Object.values(userSegments)) {
+      for (const segment of segments) {
+        segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
+      }
     }
 
-    // Format segments with stats
-    const segments = Object.entries(SEGMENT_DEFINITIONS).map(([id, def]) => ({
-      id,
-      ...def,
-      count: segmentCounts[id] || 0,
-      topUsers: (segmentUsers[id] || []).slice(0, 5),
-      avgLeadScore: segmentUsers[id]?.length > 0
-        ? Math.round(segmentUsers[id].reduce((sum, u) => sum + u.leadScore, 0) / segmentUsers[id].length)
-        : 0,
-    })).sort((a, b) => b.count - a.count);
-
-    // Calculate total segmented users
-    const totalSegmentedUsers = new Set(
-      Object.values(segmentUsers).flatMap(users => users.map(u => u.userId))
-    ).size;
-
-    // High-value leads (lead score > 60)
-    const allUsers = Object.values(segmentUsers).flat();
-    const uniqueUsers = Array.from(
-      new Map(allUsers.map(u => [u.userId, u])).values()
+    // Total users
+    const totalUsersResult = await queryOne<{ count: string }>(
+      "SELECT COUNT(*) as count FROM users"
     );
-    const highValueLeads = uniqueUsers
-      .filter(u => u.leadScore > 60)
-      .sort((a, b) => b.leadScore - a.leadScore)
-      .slice(0, 10);
+    const totalUsers = parseInt(totalUsersResult?.count || "0");
+
+    // Format segments with metadata
+    const formattedSegments = Object.entries(SEGMENT_KEYWORDS).map(([key, config]) => ({
+      id: key,
+      name: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      emoji: config.emoji,
+      description: config.description,
+      userCount: segmentCounts[key] || 0,
+      percentage: totalUsers > 0 
+        ? Math.round(((segmentCounts[key] || 0) / totalUsers) * 100) 
+        : 0,
+    })).sort((a, b) => b.userCount - a.userCount);
+
+    // Top users per segment (get top 5 per segment)
+    // Using IN clause with dynamic values instead of ANY with array
+    const topUsersPerSegment: Record<string, { userId: string; name: string; messageCount: number }[]> = {};
+    
+    for (const segment of Object.keys(SEGMENT_KEYWORDS)) {
+      const usersInSegment = Object.entries(userSegments)
+        .filter(([_, segments]) => segments.has(segment))
+        .map(([userId]) => userId);
+      
+      if (usersInSegment.length > 0) {
+        // Build parameterized query with numbered placeholders
+        const placeholders = usersInSegment.map((_, i) => `$${i + 1}`).join(', ');
+        const topUsers = await query<{ user_id: string; name: string; msg_count: string }>(`
+          SELECT 
+            u.id as user_id,
+            COALESCE(u.name, 'Utente Anonimo') as name,
+            u.total_messages as msg_count
+          FROM users u
+          WHERE u.id IN (${placeholders})
+          ORDER BY u.total_messages DESC
+          LIMIT 5
+        `, usersInSegment.map(id => parseInt(id)));
+        
+        topUsersPerSegment[segment] = topUsers.map(u => ({
+          userId: u.user_id,
+          name: u.name,
+          messageCount: parseInt(u.msg_count),
+        }));
+      }
+    }
+
+    // Calculate lead scores based on segments
+    const segmentBonuses: Record<string, number> = {
+      'potenziali_investitori': 25,
+      'ristoratori_attivi': 20,
+      'aspiranti_ristoratori': 15,
+      'organizzatori_eventi': 10,
+      'appassionati_vino': 5,
+    };
+
+    // High value leads (users in multiple valuable segments)
+    const highValueLeads: { userId: string; segments: string[]; score: number }[] = [];
+    
+    for (const [userId, segments] of Object.entries(userSegments)) {
+      let score = 0;
+      for (const segment of segments) {
+        score += segmentBonuses[segment] || 0;
+      }
+      if (score >= 15) {
+        highValueLeads.push({
+          userId,
+          segments: Array.from(segments),
+          score,
+        });
+      }
+    }
+    
+    highValueLeads.sort((a, b) => b.score - a.score);
 
     return NextResponse.json({
       success: true,
       segments: {
-        list: segments,
-        totalUsers: userMessages.length,
-        totalSegmentedUsers,
-        summary: {
-          topSegment: segments[0]?.name || 'N/A',
-          topSegmentCount: segments[0]?.count || 0,
-          highValueLeads: highValueLeads.length,
-          insights: [
-            segments[0]?.count > 0 
-              ? `${segments[0].count} utenti sono "${segments[0].name}" - target ideale per partnership ${segments[0].id === 'aspiring_restaurateur' ? 'con fornitori attrezzature' : segments[0].id === 'wine_enthusiast' ? 'con cantine' : 'nel settore food'}.`
-              : 'Raccogli più conversazioni per identificare segmenti.',
-            highValueLeads.length > 0
-              ? `Hai ${highValueLeads.length} lead ad alto potenziale per collaborazioni commerciali.`
-              : 'Non ci sono ancora lead ad alto valore.',
-          ],
+        breakdown: formattedSegments,
+        topUsersPerSegment,
+        highValueLeads: highValueLeads.slice(0, 20),
+        insights: {
+          totalSegmentedUsers: Object.keys(userSegments).length,
+          mostPopularSegment: formattedSegments[0]?.name || 'N/A',
+          recommendation: formattedSegments[0] 
+            ? `Il segmento "${formattedSegments[0].name}" è il più grande con ${formattedSegments[0].userCount} utenti. Considera di creare contenuti mirati per loro.`
+            : 'Raccogli più dati per segmentare il tuo pubblico.',
         },
-        highValueLeads,
       },
       timestamp: new Date().toISOString(),
     });

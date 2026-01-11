@@ -18,10 +18,9 @@ export async function GET(request: Request) {
 
     // Unique users in time range
     const uniqueUsersResult = await queryOne<{ count: string }>(`
-      SELECT COUNT(DISTINCT c.user_id) as count
-      FROM messages m
-      JOIN conversations c ON c.id = m.conversation_id
-      WHERE m.created_at >= NOW() - ($1 || ' hours')::interval
+      SELECT COUNT(DISTINCT user_id) as count
+      FROM messages
+      WHERE created_at >= NOW() - ($1 || ' hours')::interval
     `, [hours.toString()]);
     const uniqueUsers = parseInt(uniqueUsersResult?.count || "0");
 
@@ -34,16 +33,15 @@ export async function GET(request: Request) {
       last_message: string;
     }>(`
       SELECT 
-        c.user_id,
+        m.user_id,
         COALESCE(u.name, 'Utente Anonimo') as user_name,
         u.phone_number,
         COUNT(m.id) as message_count,
         MAX(m.created_at) as last_message
       FROM messages m
-      JOIN conversations c ON c.id = m.conversation_id
-      JOIN users u ON u.id = c.user_id
+      JOIN users u ON u.id = m.user_id
       WHERE m.created_at >= NOW() - ($1 || ' hours')::interval
-      GROUP BY c.user_id, u.name, u.phone_number
+      GROUP BY m.user_id, u.name, u.phone_number
       ORDER BY message_count DESC
       LIMIT 20
     `, [hours.toString()]);
@@ -78,17 +76,17 @@ export async function GET(request: Request) {
       image: parseInt(typeStats.find(t => t.message_type === 'image')?.count || "0"),
     };
 
-    // Messages by sender
-    const senderStats = await query<{ sender: string; count: string }>(`
-      SELECT sender, COUNT(*) as count
+    // Messages by role (user vs assistant)
+    const roleStats = await query<{ role: string; count: string }>(`
+      SELECT role, COUNT(*) as count
       FROM messages
       WHERE created_at >= NOW() - ($1 || ' hours')::interval
-      GROUP BY sender
+      GROUP BY role
     `, [hours.toString()]);
 
     const messagesBySender = {
-      user: parseInt(senderStats.find(s => s.sender === 'user')?.count || "0"),
-      bot: parseInt(senderStats.find(s => s.sender === 'bot')?.count || "0"),
+      user: parseInt(roleStats.find(s => s.role === 'user')?.count || "0"),
+      bot: parseInt(roleStats.find(s => s.role === 'assistant')?.count || "0"),
     };
 
     return NextResponse.json({

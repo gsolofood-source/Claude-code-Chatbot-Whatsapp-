@@ -19,9 +19,9 @@ export async function GET(
       name: string;
       phone_number: string;
       created_at: string;
-      last_interaction: string;
+      last_seen: string;
     }>(`
-      SELECT id, COALESCE(name, 'Utente Anonimo') as name, phone_number, created_at, last_interaction
+      SELECT id, COALESCE(name, 'Utente Anonimo') as name, phone_number, created_at, last_seen
       FROM users
       WHERE id = $1
     `, [userId]);
@@ -37,23 +37,22 @@ export async function GET(
     const logs = await query<{
       id: string;
       conversation_id: string;
-      sender: string;
+      role: string;
       message_type: string;
       content: string;
       created_at: string;
-      response_time_ms: string | null;
+      processing_time_ms: string | null;
     }>(`
       SELECT 
         m.id,
         m.conversation_id,
-        m.sender,
+        m.role,
         m.message_type,
         m.content,
         m.created_at,
-        m.response_time_ms
+        m.processing_time_ms
       FROM messages m
-      JOIN conversations c ON c.id = m.conversation_id
-      WHERE c.user_id = $1
+      WHERE m.user_id = $1
         AND m.created_at >= NOW() - ($2 || ' hours')::interval
       ORDER BY m.created_at DESC
       LIMIT $3
@@ -62,10 +61,9 @@ export async function GET(
     // Get total count
     const countResult = await queryOne<{ count: string }>(`
       SELECT COUNT(*) as count
-      FROM messages m
-      JOIN conversations c ON c.id = m.conversation_id
-      WHERE c.user_id = $1
-        AND m.created_at >= NOW() - ($2 || ' hours')::interval
+      FROM messages
+      WHERE user_id = $1
+        AND created_at >= NOW() - ($2 || ' hours')::interval
     `, [userId, hours.toString()]);
     const totalMessages = parseInt(countResult?.count || "0");
 
@@ -79,11 +77,11 @@ export async function GET(
     const formattedLogs = logs.map(log => ({
       id: log.id,
       conversationId: log.conversation_id,
-      sender: log.sender,
+      role: log.role,
       type: log.message_type,
       content: log.content,
       timestamp: log.created_at,
-      responseTimeMs: log.response_time_ms ? parseInt(log.response_time_ms) : null,
+      processingTimeMs: log.processing_time_ms ? parseInt(log.processing_time_ms) : null,
     }));
 
     return NextResponse.json({
@@ -93,7 +91,7 @@ export async function GET(
         name: user.name,
         phone: maskedPhone,
         createdAt: user.created_at,
-        lastInteraction: user.last_interaction,
+        lastSeen: user.last_seen,
       },
       hours,
       totalMessages,

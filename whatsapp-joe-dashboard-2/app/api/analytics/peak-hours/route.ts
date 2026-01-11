@@ -8,14 +8,14 @@ export async function GET(request: Request) {
   const days = safeInt(searchParams.get("days"), 1, 90, 30); // Max 90 days
 
   try {
-    // Messages by hour of day
+    // Messages by hour of day (user messages only)
     const hourlyDistribution = await query<{ hour: string; count: string }>(`
       SELECT 
         TO_CHAR(created_at, 'HH24') as hour,
         COUNT(*) as count
       FROM messages
       WHERE created_at >= NOW() - ($1 || ' days')::interval
-        AND sender = 'user'
+        AND role = 'user'
       GROUP BY TO_CHAR(created_at, 'HH24')
       ORDER BY hour
     `, [days.toString()]);
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         COUNT(*) as count
       FROM messages
       WHERE created_at >= NOW() - ($1 || ' days')::interval
-        AND sender = 'user'
+        AND role = 'user'
       GROUP BY EXTRACT(DOW FROM created_at), TO_CHAR(created_at, 'Day')
       ORDER BY day
     `, [days.toString()]);
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
         COUNT(*) as count
       FROM messages
       WHERE created_at >= NOW() - ($1 || ' days')::interval
-        AND sender = 'user'
+        AND role = 'user'
       GROUP BY EXTRACT(DOW FROM created_at), TO_CHAR(created_at, 'HH24')
     `, [days.toString()]);
 

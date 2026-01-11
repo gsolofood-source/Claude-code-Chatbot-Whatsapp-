@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     const messages = await query<{ content: string; created_at: string }>(`
       SELECT content, created_at
       FROM messages
-      WHERE sender = 'user'
+      WHERE role = 'user'
         AND message_type = 'text'
         AND created_at >= NOW() - ($1 || ' days')::interval
       ORDER BY created_at DESC
@@ -111,13 +111,14 @@ export async function GET(request: Request) {
       .slice(0, 50)
       .map(([word, count]) => ({ word, count }));
 
-    // Topic distribution
+    // Topic distribution - prevent division by zero
+    const totalMsgCount = messages.length || 1;
     const topicDistribution = Object.entries(categoryFrequency)
       .sort((a, b) => b[1] - a[1])
       .map(([topic, count]) => ({
         topic,
         count,
-        percentage: Math.round((count / messages.length) * 100),
+        percentage: Math.round((count / totalMsgCount) * 100),
         examples: categoryExamples[topic] || [],
       }));
 
@@ -130,25 +131,27 @@ export async function GET(request: Request) {
       .map(m => m.content)
       .slice(0, 20);
 
-    // Common question patterns with parameterized interval
+    // Common question patterns - using subquery to avoid GROUP BY alias issue
     const questionPatterns = await query<{ pattern: string; count: string }>(`
-      SELECT 
-        CASE
-          WHEN LOWER(content) LIKE '%come%' THEN 'Come fare...'
-          WHEN LOWER(content) LIKE '%quanto%' THEN 'Quanto costa/serve...'
-          WHEN LOWER(content) LIKE '%dove%' THEN 'Dove trovare...'
-          WHEN LOWER(content) LIKE '%perché%' OR LOWER(content) LIKE '%perche%' THEN 'Perché...'
-          WHEN LOWER(content) LIKE '%cosa%' THEN 'Cosa fare/significa...'
-          WHEN LOWER(content) LIKE '%posso%' OR LOWER(content) LIKE '%puoi%' THEN 'Posso/Puoi...'
-          WHEN LOWER(content) LIKE '%consiglio%' OR LOWER(content) LIKE '%consigli%' THEN 'Richiesta consiglio'
-          ELSE 'Altro'
-        END as pattern,
-        COUNT(*) as count
-      FROM messages
-      WHERE sender = 'user'
-        AND message_type = 'text'
-        AND content LIKE '%?%'
-        AND created_at >= NOW() - ($1 || ' days')::interval
+      SELECT pattern, COUNT(*) as count
+      FROM (
+        SELECT 
+          CASE
+            WHEN LOWER(content) LIKE '%come%' THEN 'Come fare...'
+            WHEN LOWER(content) LIKE '%quanto%' THEN 'Quanto costa/serve...'
+            WHEN LOWER(content) LIKE '%dove%' THEN 'Dove trovare...'
+            WHEN LOWER(content) LIKE '%perché%' OR LOWER(content) LIKE '%perche%' THEN 'Perché...'
+            WHEN LOWER(content) LIKE '%cosa%' THEN 'Cosa fare/significa...'
+            WHEN LOWER(content) LIKE '%posso%' OR LOWER(content) LIKE '%puoi%' THEN 'Posso/Puoi...'
+            WHEN LOWER(content) LIKE '%consiglio%' OR LOWER(content) LIKE '%consigli%' THEN 'Richiesta consiglio'
+            ELSE 'Altro'
+          END as pattern
+        FROM messages
+        WHERE role = 'user'
+          AND message_type = 'text'
+          AND content LIKE '%?%'
+          AND created_at >= NOW() - ($1 || ' days')::interval
+      ) patterns
       GROUP BY pattern
       ORDER BY count DESC
     `, [days.toString()]);

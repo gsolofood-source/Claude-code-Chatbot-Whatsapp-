@@ -25,8 +25,8 @@ export async function GET(request: Request) {
       message_count: string;
       first_interaction: string;
       last_interaction: string;
-      call_count: string;
-      total_call_minutes: string;
+      audio_count: string;
+      total_audio_seconds: string;
     }>(`
       SELECT 
         u.id as user_id,
@@ -35,20 +35,11 @@ export async function GET(request: Request) {
         COUNT(m.id) as message_count,
         MIN(m.created_at) as first_interaction,
         MAX(m.created_at) as last_interaction,
-        COALESCE(ct.call_count, 0) as call_count,
-        COALESCE(ct.total_minutes, 0) as total_call_minutes
+        COUNT(CASE WHEN m.message_type = 'audio' THEN 1 END) as audio_count,
+        COALESCE(SUM(m.audio_duration_seconds), 0) as total_audio_seconds
       FROM users u
-      LEFT JOIN conversations c ON c.user_id = u.id
-      LEFT JOIN messages m ON m.conversation_id = c.id AND m.sender = 'user' ${dateFilter}
-      LEFT JOIN (
-        SELECT 
-          user_id, 
-          COUNT(*) as call_count,
-          ROUND(SUM(call_duration_seconds) / 60.0, 1) as total_minutes
-        FROM call_transcripts
-        GROUP BY user_id
-      ) ct ON ct.user_id = u.id
-      GROUP BY u.id, u.name, u.phone_number, ct.call_count, ct.total_minutes
+      LEFT JOIN messages m ON m.user_id = u.id AND m.role = 'user' ${dateFilter}
+      GROUP BY u.id, u.name, u.phone_number
       HAVING COUNT(m.id) > 0
       ORDER BY message_count DESC
       LIMIT $1
@@ -57,11 +48,11 @@ export async function GET(request: Request) {
     // Calculate engagement scores
     const usersWithScores = topUsers.map((user, index) => {
       const messageCount = parseInt(user.message_count);
-      const callCount = parseInt(user.call_count);
-      const callMinutes = parseFloat(user.total_call_minutes);
+      const audioCount = parseInt(user.audio_count);
+      const audioMinutes = parseFloat(user.total_audio_seconds) / 60;
       
-      // Simple engagement score: messages + (calls * 10) + (call_minutes * 2)
-      const engagementScore = messageCount + (callCount * 10) + (callMinutes * 2);
+      // Simple engagement score: messages + (audio_messages * 10) + (audio_minutes * 2)
+      const engagementScore = messageCount + (audioCount * 10) + (audioMinutes * 2);
 
       // Mask phone number for privacy
       const maskedPhone = user.phone_number.replace(/(\+\d{2})(\d{3})(\d+)(\d{3})/, '$1 $2****$4');
@@ -73,8 +64,8 @@ export async function GET(request: Request) {
         phone: maskedPhone,
         stats: {
           messages: messageCount,
-          calls: parseInt(user.call_count),
-          callMinutes: parseFloat(user.total_call_minutes),
+          audioMessages: parseInt(user.audio_count),
+          audioMinutes: Math.round(audioMinutes * 10) / 10,
         },
         engagementScore: Math.round(engagementScore),
         firstInteraction: user.first_interaction,

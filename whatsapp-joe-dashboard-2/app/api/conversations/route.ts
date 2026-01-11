@@ -33,11 +33,11 @@ export async function GET(request: Request) {
       phone_number: string;
       started_at: string;
       last_activity: string;
-      status: string;
+      is_active: boolean;
       message_count: string;
       last_message: string;
       last_message_type: string;
-      last_sender: string;
+      last_role: string;
     }>(`
       SELECT 
         c.id as conversation_id,
@@ -49,8 +49,8 @@ export async function GET(request: Request) {
           (SELECT MAX(created_at) FROM messages WHERE conversation_id = c.id),
           c.started_at
         ) as last_activity,
-        c.status,
-        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id) as message_count,
+        c.is_active,
+        c.message_count,
         (
           SELECT content 
           FROM messages 
@@ -66,12 +66,12 @@ export async function GET(request: Request) {
           LIMIT 1
         ) as last_message_type,
         (
-          SELECT sender 
+          SELECT role 
           FROM messages 
           WHERE conversation_id = c.id 
           ORDER BY created_at DESC 
           LIMIT 1
-        ) as last_sender
+        ) as last_role
       FROM conversations c
       JOIN users u ON u.id = c.user_id
       WHERE 1=1 ${searchFilter}
@@ -112,11 +112,11 @@ export async function GET(request: Request) {
         phone: maskedPhone,
         lastMessage,
         timestamp: conv.last_activity,
-        status: conv.status || 'active',
+        status: conv.is_active ? 'active' : 'ended',
         unread: false, // TODO: implement unread tracking
         messageCount: parseInt(conv.message_count),
         type: conv.last_message_type || 'text',
-        lastSender: conv.last_sender || 'user',
+        lastSender: conv.last_role === 'assistant' ? 'bot' : 'user',
       };
     });
 

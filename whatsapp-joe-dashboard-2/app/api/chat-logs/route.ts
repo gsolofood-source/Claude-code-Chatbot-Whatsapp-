@@ -16,26 +16,25 @@ export async function GET(request: Request) {
       user_id: string;
       user_name: string;
       phone_number: string;
-      sender: string;
+      role: string;
       message_type: string;
       content: string;
       created_at: string;
-      response_time_ms: string | null;
+      processing_time_ms: string | null;
     }>(`
       SELECT 
         m.id,
         m.conversation_id,
-        c.user_id,
+        m.user_id,
         COALESCE(u.name, 'Utente Anonimo') as user_name,
         u.phone_number,
-        m.sender,
+        m.role,
         m.message_type,
         m.content,
         m.created_at,
-        m.response_time_ms
+        m.processing_time_ms
       FROM messages m
-      JOIN conversations c ON c.id = m.conversation_id
-      JOIN users u ON u.id = c.user_id
+      JOIN users u ON u.id = m.user_id
       WHERE m.created_at >= NOW() - ($1 || ' hours')::interval
       ORDER BY m.created_at DESC
       LIMIT $2
@@ -62,11 +61,11 @@ export async function GET(request: Request) {
         userId: log.user_id,
         userName: log.user_name,
         phone: maskedPhone,
-        sender: log.sender,
+        role: log.role,
         type: log.message_type,
         content: log.content,
         timestamp: log.created_at,
-        responseTimeMs: log.response_time_ms ? parseInt(log.response_time_ms) : null,
+        processingTimeMs: log.processing_time_ms ? parseInt(log.processing_time_ms) : null,
       };
     });
 
