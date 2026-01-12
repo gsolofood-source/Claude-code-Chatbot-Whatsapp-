@@ -3,7 +3,6 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { parseExcelFile } from '@/lib/excel-parser';
-import { parsePdfText } from '@/lib/pdf-parser';
 
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
 
@@ -47,21 +46,14 @@ export async function POST(request: NextRequest) {
       // Parse Excel file
       companies = parseExcelFile(fileBuffer.buffer as ArrayBuffer);
     } else if (metadata.type === 'pdf') {
-      // Parse PDF file
-      // Note: pdf-parse requires dynamic import in Next.js
-      try {
-        const pdfParse = (await import('pdf-parse')).default;
-        const pdfData = await pdfParse(fileBuffer);
-        companies = await parsePdfText(pdfData.text);
-      } catch {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Errore durante il parsing del PDF. Prova con un file Excel.',
-          },
-          { status: 500 }
-        );
-      }
+      // PDF parsing not supported in this version
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Il parsing PDF non è supportato. Usa un file Excel (.xlsx, .xls).',
+        },
+        { status: 400 }
+      );
     } else {
       return NextResponse.json(
         { success: false, error: 'Tipo file non supportato' },

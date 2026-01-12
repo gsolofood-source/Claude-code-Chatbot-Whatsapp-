@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Business Enrichment Tool',
@@ -17,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it">
-      <body className={inter.className}>
+      <body className="font-sans antialiased">
         <div className="flex min-h-screen">
           <Sidebar />
           <main className="flex-1 ml-64">
