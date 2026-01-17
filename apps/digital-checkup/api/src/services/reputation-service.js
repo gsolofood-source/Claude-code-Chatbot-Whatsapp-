@@ -16,6 +16,7 @@ import { calculateReputationScore, generateReputationSummary } from '../scorers/
  * @param {string} options.businessName - Restaurant name and location
  * @param {string} options.googleApiKey - Google Places API key
  * @param {string} options.anthropicApiKey - Anthropic API key for sentiment analysis
+ * @param {string} [options.outscraperApiKey] - Optional Outscraper API key for more reviews (30+)
  * @param {string} [options.placeId] - Optional Google Place ID for precise identification
  * @param {boolean} [options.verbose=false] - Return verbose sentiment analysis
  * @param {Function} [options.progressCallback] - Optional callback for progress updates
@@ -26,6 +27,7 @@ export async function analyzeReputation(options) {
     businessName,
     googleApiKey,
     anthropicApiKey,
+    outscraperApiKey = null,
     placeId = null,
     verbose = false,
     progressCallback = () => {},
@@ -42,9 +44,9 @@ export async function analyzeReputation(options) {
     throw new Error('anthropicApiKey is required');
   }
 
-  // Step 1: Fetch Google Reviews
+  // Step 1: Fetch Google Reviews (uses Outscraper if available, fallback to Google Places API)
   progressCallback('Fetching Google reviews...');
-  const googleData = await scrapeGoogleReviews(businessName, googleApiKey, placeId);
+  const googleData = await scrapeGoogleReviews(businessName, googleApiKey, placeId, outscraperApiKey);
 
   // Step 2: Prepare reviews for analysis
   const allReviews = googleData.reviews.map(r => ({ ...r, platform: 'google' }));
