@@ -6,20 +6,26 @@
     <title>Digital Check-Up | SoloFood</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-primary: #0A0A0A;
             --bg-secondary: #111111;
             --bg-tertiary: #1A1A1A;
+            --bg-card: #161616;
             --text-primary: #FFFFFF;
             --text-secondary: #999999;
             --text-muted: #666666;
             --border: rgba(255,255,255,0.1);
             --border-focus: rgba(255,255,255,0.2);
             --green: #22C55E;
+            --green-dim: rgba(34,197,94,0.15);
             --yellow: #FBBF24;
+            --yellow-dim: rgba(251,191,36,0.15);
             --red: #EF4444;
+            --red-dim: rgba(239,68,68,0.15);
+            --blue: #3B82F6;
+            --blue-dim: rgba(59,130,246,0.15);
         }
 
         * {
@@ -72,9 +78,9 @@
         }
 
         .main {
-            max-width: 480px;
+            max-width: 640px;
             margin: 0 auto;
-            padding: 120px 20px 60px;
+            padding: 100px 20px 60px;
         }
 
         .hero {
@@ -212,8 +218,8 @@
         }
 
         .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
+            background: var(--red-dim);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             color: var(--red);
             padding: 10px 14px;
             border-radius: 8px;
@@ -241,11 +247,14 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .score-display {
+        /* Score Hero */
+        .score-hero {
             text-align: center;
-            padding: 40px 0;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 32px;
+            padding: 40px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 20px;
         }
 
         .score-label {
@@ -258,11 +267,17 @@
         }
 
         .score-value {
-            font-size: 80px;
-            font-weight: 600;
+            font-size: 72px;
+            font-weight: 700;
             letter-spacing: -4px;
             line-height: 1;
         }
+
+        .score-value.excellent { color: var(--green); }
+        .score-value.good { color: #84CC16; }
+        .score-value.fair { color: var(--yellow); }
+        .score-value.poor { color: #F97316; }
+        .score-value.critical { color: var(--red); }
 
         .score-max {
             font-size: 18px;
@@ -271,8 +286,8 @@
         }
 
         .score-status {
-            font-size: 14px;
-            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 500;
             margin-top: 8px;
         }
 
@@ -284,8 +299,8 @@
 
         .risk-badge {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 4px;
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
@@ -293,56 +308,115 @@
             margin-top: 16px;
         }
 
-        .risk-badge.low { background: rgba(34,197,94,0.15); color: var(--green); }
-        .risk-badge.medium { background: rgba(251,191,36,0.15); color: var(--yellow); }
-        .risk-badge.high { background: rgba(239,68,68,0.15); color: var(--red); }
+        .risk-badge.low { background: var(--green-dim); color: var(--green); }
+        .risk-badge.medium { background: var(--yellow-dim); color: var(--yellow); }
+        .risk-badge.high { background: var(--red-dim); color: var(--red); }
 
+        /* Key Insight */
+        .insight-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .insight-icon {
+            font-size: 20px;
+        }
+
+        .insight-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .insight-text {
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Section Title */
         .section-title {
             font-size: 11px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 12px;
+            margin-top: 8px;
         }
 
+        /* Pillars Grid */
         .pillars-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .pillar-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pillar-card:hover {
+            border-color: var(--border-focus);
         }
 
         .pillar-card.unavailable {
             opacity: 0.4;
+            cursor: default;
+        }
+
+        .pillar-card.expanded {
+            grid-column: 1 / -1;
         }
 
         .pillar-header {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 8px;
         }
 
         .pillar-name {
             font-size: 12px;
             color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pillar-emoji {
+            font-size: 14px;
         }
 
         .pillar-weight {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
 
         .pillar-score {
-            font-size: 28px;
-            font-weight: 600;
+            font-size: 32px;
+            font-weight: 700;
             letter-spacing: -1px;
             margin-bottom: 8px;
         }
@@ -355,8 +429,8 @@
         .pillar-score.na { color: var(--text-muted); font-size: 16px; }
 
         .pillar-bar {
-            height: 3px;
-            background: var(--bg-primary);
+            height: 4px;
+            background: var(--bg-tertiary);
             border-radius: 2px;
             overflow: hidden;
         }
@@ -373,83 +447,141 @@
         .pillar-bar-fill.poor { background: #F97316; }
         .pillar-bar-fill.critical { background: var(--red); }
 
-        .insight-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 16px;
+        .pillar-details {
+            display: none;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
         }
 
-        .insight-text {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.6;
+        .pillar-card.expanded .pillar-details {
+            display: block;
         }
 
-        .lists-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .list-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px;
-        }
-
-        .list-title {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-        }
-
-        .list-title.green { color: var(--green); }
-        .list-title.red { color: var(--red); }
-
-        .list-items {
-            list-style: none;
-        }
-
-        .list-items li {
-            font-size: 12px;
-            color: var(--text-secondary);
+        .pillar-detail-item {
+            display: flex;
+            justify-content: space-between;
             padding: 6px 0;
+            font-size: 12px;
             border-bottom: 1px solid var(--border);
         }
 
-        .list-items li:last-child {
+        .pillar-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .pillar-detail-label {
+            color: var(--text-muted);
+        }
+
+        .pillar-detail-value {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Strength/Weakness Grid */
+        .sw-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .sw-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .sw-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .sw-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        .sw-icon.green { background: var(--green-dim); color: var(--green); }
+        .sw-icon.red { background: var(--red-dim); color: var(--red); }
+
+        .sw-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .sw-list {
+            list-style: none;
+        }
+
+        .sw-list li {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sw-list li:last-child {
             border-bottom: none;
             padding-bottom: 0;
         }
 
+        .sw-list li::before {
+            content: '';
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .sw-card.strength .sw-list li::before { background: var(--green); }
+        .sw-card.weakness .sw-list li::before { background: var(--red); }
+
+        /* Recommendations */
         .recs-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 32px;
+            margin-bottom: 20px;
         }
 
         .recs-header {
-            padding: 12px 16px;
+            padding: 16px 20px;
             border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .recs-icon {
+            font-size: 18px;
+        }
+
+        .recs-title {
             font-size: 13px;
             font-weight: 600;
         }
 
         .rec-item {
-            padding: 12px 16px;
+            padding: 14px 20px;
             border-bottom: 1px solid var(--border);
             display: flex;
-            gap: 10px;
-            font-size: 13px;
-            color: var(--text-secondary);
+            gap: 12px;
+            align-items: flex-start;
         }
 
         .rec-item:last-child {
@@ -457,22 +589,70 @@
         }
 
         .rec-number {
+            width: 22px;
+            height: 22px;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
             color: var(--text-muted);
-            font-weight: 500;
+            flex-shrink: 0;
         }
 
-        .rec-text.urgent {
+        .rec-item.urgent .rec-number {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+
+        .rec-content {
+            flex: 1;
+        }
+
+        .rec-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .rec-item.urgent .rec-text {
             color: var(--text-primary);
         }
 
+        .rec-tag {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-top: 6px;
+        }
+
+        .rec-tag.urgent {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+
+        .rec-tag.priority {
+            background: var(--yellow-dim);
+            color: var(--yellow);
+        }
+
+        /* CTA */
         .cta-section {
             text-align: center;
-            padding-top: 24px;
-            border-top: 1px solid var(--border);
+            padding: 32px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
         }
 
         .cta-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             margin-bottom: 6px;
         }
@@ -485,7 +665,7 @@
 
         .cta-btn {
             display: inline-block;
-            padding: 12px 24px;
+            padding: 12px 28px;
             background: var(--text-primary);
             color: var(--bg-primary);
             border-radius: 8px;
@@ -502,11 +682,11 @@
         .new-btn {
             display: inline-block;
             margin-top: 12px;
-            padding: 10px 16px;
+            padding: 10px 20px;
             background: transparent;
             color: var(--text-muted);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 13px;
             font-family: inherit;
             cursor: pointer;
@@ -518,6 +698,7 @@
             border-color: var(--border-focus);
         }
 
+        /* Loading */
         .loading-overlay {
             display: none;
             position: fixed;
@@ -537,27 +718,71 @@
 
         .loading-content {
             text-align: center;
+            max-width: 300px;
         }
 
         .loading-spinner {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             border: 2px solid var(--border);
             border-top-color: var(--text-primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 24px;
         }
 
         .loading-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .loading-subtitle {
             font-size: 13px;
             color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .loading-steps {
+            text-align: left;
+        }
+
+        .loading-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .loading-step.active {
+            color: var(--text-primary);
+        }
+
+        .loading-step.done {
+            color: var(--green);
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+
+        .loading-step.active .step-dot {
+            background: var(--text-primary);
+            animation: pulse 1s ease infinite;
+        }
+
+        .loading-step.done .step-dot {
+            background: var(--green);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
         }
 
         .footer {
@@ -567,11 +792,11 @@
             color: var(--text-muted);
         }
 
-        @media (max-width: 480px) {
-            .main { padding: 100px 16px 40px; }
+        @media (max-width: 540px) {
+            .main { padding: 90px 16px 40px; }
             .hero h1 { font-size: 24px; }
-            .score-value { font-size: 64px; }
-            .pillars-grid, .lists-grid { grid-template-columns: 1fr; }
+            .score-value { font-size: 56px; }
+            .pillars-grid, .sw-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -637,42 +862,58 @@
         </section>
 
         <section class="results-section" id="resultsSection">
-            <div class="score-display">
-                <div class="score-label">Punteggio</div>
-                <div class="score-value"><span id="globalScore">--</span><span class="score-max">/100</span></div>
+            <!-- Score Hero -->
+            <div class="score-hero">
+                <div class="score-label">Punteggio Digitale</div>
+                <div class="score-value" id="globalScore">--<span class="score-max">/100</span></div>
                 <div class="score-status" id="globalStatus">--</div>
                 <div class="score-business" id="businessNameDisplay">--</div>
-                <div class="risk-badge low" id="riskBadge">
-                    <span id="riskText">Rischio Basso</span>
-                </div>
+                <div class="risk-badge low" id="riskBadge">Rischio Basso</div>
             </div>
 
-            <div class="section-title">Dettaglio</div>
-            <div class="pillars-grid" id="pillarsGrid"></div>
-
-            <div class="section-title">Insight</div>
+            <!-- Key Insight -->
             <div class="insight-card">
+                <div class="insight-header">
+                    <span class="insight-icon">💡</span>
+                    <span class="insight-title">Insight Principale</span>
+                </div>
                 <p class="insight-text" id="keyInsight">--</p>
             </div>
 
-            <div class="lists-grid">
-                <div class="list-card">
-                    <div class="list-title green">Punti di forza</div>
-                    <ul class="list-items" id="strengthsList"></ul>
+            <!-- Pillars -->
+            <div class="section-title">Dettaglio per canale</div>
+            <div class="pillars-grid" id="pillarsGrid"></div>
+
+            <!-- Strengths & Weaknesses -->
+            <div class="sw-grid">
+                <div class="sw-card strength">
+                    <div class="sw-header">
+                        <div class="sw-icon green">✓</div>
+                        <span class="sw-title">Punti di Forza</span>
+                    </div>
+                    <ul class="sw-list" id="strengthsList"></ul>
                 </div>
-                <div class="list-card">
-                    <div class="list-title red">Da migliorare</div>
-                    <ul class="list-items" id="weaknessesList"></ul>
+                <div class="sw-card weakness">
+                    <div class="sw-header">
+                        <div class="sw-icon red">!</div>
+                        <span class="sw-title">Aree Critiche</span>
+                    </div>
+                    <ul class="sw-list" id="weaknessesList"></ul>
                 </div>
             </div>
 
+            <!-- Recommendations -->
             <div class="recs-card">
-                <div class="recs-header">Azioni prioritarie</div>
+                <div class="recs-header">
+                    <span class="recs-icon">🎯</span>
+                    <span class="recs-title">Piano d'Azione Prioritario</span>
+                </div>
                 <div id="recommendationsList"></div>
             </div>
 
+            <!-- CTA -->
             <div class="cta-section">
-                <div class="cta-title">Vuoi migliorare?</div>
+                <div class="cta-title">Vuoi migliorare questi numeri?</div>
                 <p class="cta-subtitle">Ti aiutiamo a ottimizzare la tua presenza digitale</p>
                 <a href="#" class="cta-btn">Prenota consulenza</a>
                 <br>
@@ -683,16 +924,33 @@
 
     <footer class="footer">Powered by SoloFood</footer>
 
+    <!-- Loading -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
             <div class="loading-spinner"></div>
             <div class="loading-title">Analisi in corso</div>
-            <div class="loading-subtitle">Stiamo esaminando i tuoi canali</div>
+            <div class="loading-subtitle">Stiamo esaminando i tuoi canali digitali</div>
+            <div class="loading-steps">
+                <div class="loading-step" id="step-website"><span class="step-dot"></span>Analisi Sito Web</div>
+                <div class="loading-step" id="step-instagram"><span class="step-dot"></span>Analisi Instagram</div>
+                <div class="loading-step" id="step-gmb"><span class="step-dot"></span>Analisi Google My Business</div>
+                <div class="loading-step" id="step-reviews"><span class="step-dot"></span>Analisi Recensioni</div>
+                <div class="loading-step" id="step-score"><span class="step-dot"></span>Calcolo Punteggio Globale</div>
+            </div>
         </div>
     </div>
 
     <script>
-        const API_BASE_URL = 'https://claude-code-chatbot-whatsapp-production-750b.up.railway.app';
+        // API URL - può essere sovrascritto tramite variabile globale window.DIGITAL_CHECKUP_API_URL
+        const API_BASE_URL = window.DIGITAL_CHECKUP_API_URL || 'https://claude-code-chatbot-whatsapp-production-750b.up.railway.app';
+        
+        // Sanitizzazione XSS
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
 
         const form = document.getElementById('analysisForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -715,7 +973,7 @@
 
             hideError();
 
-            let displayName = 'Analisi';
+            let displayName = 'Analisi Digitale';
             if (instagram) displayName = `@${instagram}`;
             else if (website) displayName = website.replace(/^https?:\/\//, '').split('/')[0];
             else if (gmbLink) displayName = 'Via Google Maps';
@@ -724,6 +982,8 @@
             submitBtn.disabled = true;
             loadingOverlay.classList.add('visible');
 
+            await runLoadingSteps(website, instagram, gmbLink);
+
             try {
                 const result = await performAnalysis({
                     businessName: gmbLink || null,
@@ -731,7 +991,9 @@
                     websiteUrl: website || null
                 });
 
-                if (!result.success) throw new Error(result.error?.message || 'Errore');
+                if (!result.success && result.error) {
+                    throw new Error(result.error.message || 'Errore nell\'analisi');
+                }
 
                 loadingOverlay.classList.remove('visible');
                 formSection.style.display = 'none';
@@ -764,127 +1026,212 @@
             errorMessage.classList.remove('visible');
         }
 
-        async function performAnalysis(params) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/analyze/global`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        businessName: params.businessName,
-                        instagramUsername: params.instagramUsername,
-                        websiteUrl: params.websiteUrl,
-                        verbose: false
-                    })
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return await response.json();
-            } catch (error) {
-                console.warn('API error, using demo:', error);
-                return generateDemoResults(params);
+        async function runLoadingSteps(hasWebsite, hasInstagram, hasGmb) {
+            const steps = [];
+            if (hasWebsite) steps.push('step-website');
+            if (hasInstagram) steps.push('step-instagram');
+            if (hasGmb) {
+                steps.push('step-gmb');
+                steps.push('step-reviews');
+            }
+            steps.push('step-score');
+
+            document.querySelectorAll('.loading-step').forEach(el => {
+                el.classList.remove('active', 'done');
+                el.style.display = 'none';
+            });
+
+            steps.forEach(id => {
+                document.getElementById(id).style.display = 'flex';
+            });
+
+            for (let i = 0; i < steps.length; i++) {
+                const step = document.getElementById(steps[i]);
+                step.classList.add('active');
+                const delay = steps[i].includes('website') ? 5000 :
+                              steps[i].includes('instagram') ? 6000 :
+                              steps[i].includes('reviews') ? 4000 :
+                              steps[i].includes('gmb') ? 3000 : 2000;
+                await new Promise(r => setTimeout(r, delay));
+                step.classList.remove('active');
+                step.classList.add('done');
             }
         }
 
-        function generateDemoResults(params) {
-            const hasIg = !!params.instagramUsername;
-            const hasWeb = !!params.websiteUrl;
-            const hasGmb = !!params.businessName;
-
-            const rep = hasGmb ? 70 + Math.floor(Math.random() * 18) : null;
-            const gmb = hasGmb ? 65 + Math.floor(Math.random() * 20) : null;
-            const ig = hasIg ? 55 + Math.floor(Math.random() * 28) : null;
-            const web = hasWeb ? 55 + Math.floor(Math.random() * 30) : null;
-
-            let total = 0, sum = 0;
-            if (rep !== null) { total += 40; sum += rep * 40; }
-            if (gmb !== null) { total += 25; sum += gmb * 25; }
-            if (ig !== null) { total += 20; sum += ig * 20; }
-            if (web !== null) { total += 15; sum += web * 15; }
-
-            const score = total > 0 ? Math.round(sum / total) : 0;
-            let status = score >= 80 ? 'Eccellente' : score >= 65 ? 'Buona' : score >= 50 ? 'Discreta' : 'Da migliorare';
-            let risk = score >= 65 ? 'LOW' : score >= 50 ? 'MEDIUM' : 'HIGH';
-            if (rep !== null && rep < 60) risk = 'HIGH';
-
-            return {
-                success: true,
-                data: {
-                    globalScore: {
-                        finalScore: score,
-                        status,
-                        riskLevel: risk,
-                        breakdown: {
-                            website: { score: web, weight: hasWeb ? 15 : 0, available: hasWeb },
-                            instagram: { score: ig, weight: hasIg ? 20 : 0, available: hasIg },
-                            google_business: { score: gmb, weight: hasGmb ? 25 : 0, available: hasGmb },
-                            reputation: { score: rep, weight: hasGmb ? 40 : 0, available: hasGmb }
-                        }
-                    },
-                    summary: {
-                        keyInsight: rep !== null && rep < 60 ? 'Priorità: migliorare le recensioni.' : gmb !== null && gmb < 60 ? 'Completa la scheda Google.' : 'Buona presenza digitale.',
-                        strongAreas: [rep >= 75 ? 'Recensioni' : null, gmb >= 75 ? 'Google' : null, ig >= 75 ? 'Instagram' : null, web >= 75 ? 'Sito' : null].filter(Boolean),
-                        criticalAreas: [rep !== null && rep < 60 ? 'Recensioni' : null, gmb !== null && gmb < 60 ? 'Google' : null, ig !== null && ig < 60 ? 'Instagram' : null, web !== null && web < 60 ? 'Sito' : null].filter(Boolean),
-                        recommendations: [
-                            rep !== null && rep < 70 ? { text: 'Rispondi alle recensioni', urgent: rep < 60 } : null,
-                            gmb !== null && gmb < 70 ? { text: 'Completa scheda Google', urgent: false } : null,
-                            ig !== null && ig < 70 ? { text: 'Pubblica più contenuti', urgent: false } : null,
-                            web !== null && web < 70 ? { text: 'Ottimizza il sito', urgent: false } : null,
-                            !hasGmb ? { text: 'Crea scheda Google My Business', urgent: true } : null
-                        ].filter(Boolean).slice(0, 5)
-                    }
-                }
-            };
+        async function performAnalysis(params) {
+            const response = await fetch(`${API_BASE_URL}/api/analyze/global`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    businessName: params.businessName,
+                    instagramUsername: params.instagramUsername,
+                    websiteUrl: params.websiteUrl,
+                    verbose: true  // Get detailed feedback
+                })
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error?.message || `HTTP ${response.status}`);
+            }
+            return await response.json();
         }
 
         function displayResults(result, displayName) {
-            const { globalScore, summary } = result.data;
-            const breakdown = globalScore.breakdown;
+            const data = result.data || result;
+            const globalScore = data.globalScore || {};
+            const summary = data.summary || {};
+            const breakdown = globalScore.breakdown || {};
 
-            document.getElementById('globalScore').textContent = globalScore.finalScore;
-            document.getElementById('globalStatus').textContent = globalScore.status;
+            // Score
+            const score = globalScore.finalScore || 0;
+            const scoreEl = document.getElementById('globalScore');
+            scoreEl.innerHTML = `${score}<span class="score-max">/100</span>`;
+            scoreEl.className = 'score-value ' + getScoreClass(score);
+
+            // Status
+            document.getElementById('globalStatus').textContent = summary.status || globalScore.status || 'Analisi completata';
             document.getElementById('businessNameDisplay').textContent = displayName;
 
-            const badge = document.getElementById('riskBadge');
-            badge.className = 'risk-badge ' + globalScore.riskLevel.toLowerCase();
-            document.getElementById('riskText').textContent = { LOW: 'Rischio Basso', MEDIUM: 'Rischio Medio', HIGH: 'Rischio Alto' }[globalScore.riskLevel];
+            // Risk badge
+            const riskLevel = summary.riskLevel || globalScore.riskLevel || 'LOW';
+            const riskBadge = document.getElementById('riskBadge');
+            riskBadge.className = 'risk-badge ' + riskLevel.toLowerCase();
+            riskBadge.textContent = { LOW: '✓ Rischio Basso', MEDIUM: '⚠ Rischio Medio', HIGH: '⚠ Rischio Alto' }[riskLevel] || 'Rischio Basso';
 
-            const grid = document.getElementById('pillarsGrid');
-            grid.innerHTML = '';
-            
-            [
-                { key: 'website', name: 'Sito Web', w: '15%' },
-                { key: 'instagram', name: 'Instagram', w: '20%' },
-                { key: 'google_business', name: 'Google', w: '25%' },
-                { key: 'reputation', name: 'Recensioni', w: '40%' }
-            ].forEach(({ key, name, w }) => {
-                const p = breakdown[key];
-                const cls = getScoreClass(p.score);
-                grid.innerHTML += `
-                    <div class="pillar-card ${!p.available ? 'unavailable' : ''}">
-                        <div class="pillar-header">
-                            <span class="pillar-name">${name}</span>
-                            <span class="pillar-weight">${p.available ? w : '—'}</span>
-                        </div>
-                        <div class="pillar-score ${cls}">${p.available ? p.score : 'N/A'}</div>
-                        <div class="pillar-bar"><div class="pillar-bar-fill ${cls}" style="width:${p.available ? p.score : 0}%"></div></div>
+            // Key insight
+            document.getElementById('keyInsight').textContent = summary.keyInsight || 'Analisi completata. Consulta i dettagli per ogni canale.';
+
+            // Pillars
+            const pillarsGrid = document.getElementById('pillarsGrid');
+            pillarsGrid.innerHTML = '';
+
+            const pillarConfig = [
+                { key: 'website', name: 'Sito Web', emoji: '🌐', dataKey: 'website' },
+                { key: 'instagram', name: 'Instagram', emoji: '📱', dataKey: 'instagram' },
+                { key: 'google_business', name: 'Google Business', emoji: '📍', dataKey: 'googleBusiness' },
+                { key: 'reputation', name: 'Recensioni', emoji: '⭐', dataKey: 'reputation' }
+            ];
+
+            pillarConfig.forEach(({ key, name, emoji, dataKey }) => {
+                const pillar = breakdown[key] || {};
+                const pillarData = data[dataKey] || data.results?.[dataKey] || {};
+                const score = pillar.score;
+                const available = pillar.available;
+                const weight = pillar.adjustedWeight || pillar.weight || 0;
+                const scoreClass = getScoreClass(score);
+
+                const card = document.createElement('div');
+                card.className = `pillar-card ${!available ? 'unavailable' : ''}`;
+                
+                let detailsHtml = '';
+                if (available && pillarData) {
+                    detailsHtml = buildPillarDetails(key, pillarData);
+                }
+
+                card.innerHTML = `
+                    <div class="pillar-header">
+                        <span class="pillar-name"><span class="pillar-emoji">${emoji}</span> ${name}</span>
+                        <span class="pillar-weight">${available ? Math.round(weight) + '%' : '—'}</span>
                     </div>
+                    <div class="pillar-score ${scoreClass}">${available ? score : 'N/A'}</div>
+                    <div class="pillar-bar"><div class="pillar-bar-fill ${scoreClass}" style="width:${available ? score : 0}%"></div></div>
+                    ${detailsHtml ? `<div class="pillar-details">${detailsHtml}</div>` : ''}
                 `;
+
+                if (available && detailsHtml) {
+                    card.addEventListener('click', () => {
+                        card.classList.toggle('expanded');
+                    });
+                }
+
+                pillarsGrid.appendChild(card);
             });
 
-            document.getElementById('keyInsight').textContent = summary.keyInsight;
-            document.getElementById('strengthsList').innerHTML = (summary.strongAreas.length ? summary.strongAreas : ['—']).map(s => `<li>${s}</li>`).join('');
-            document.getElementById('weaknessesList').innerHTML = (summary.criticalAreas.length ? summary.criticalAreas : ['—']).map(s => `<li>${s}</li>`).join('');
-            document.getElementById('recommendationsList').innerHTML = summary.recommendations.map((r, i) => `
-                <div class="rec-item">
-                    <span class="rec-number">${i + 1}.</span>
-                    <span class="rec-text ${r.urgent ? 'urgent' : ''}">${r.text}</span>
-                </div>
-            `).join('');
+            // Strengths
+            const strengths = summary.strongAreas || [];
+            document.getElementById('strengthsList').innerHTML = 
+                strengths.length > 0 
+                    ? strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')
+                    : '<li>Analizza più canali per identificare i punti di forza</li>';
+
+            // Weaknesses
+            const weaknesses = summary.criticalAreas || [];
+            document.getElementById('weaknessesList').innerHTML = 
+                weaknesses.length > 0 
+                    ? weaknesses.map(w => `<li>${escapeHtml(w)}</li>`).join('')
+                    : '<li>Nessuna area critica identificata</li>';
+
+            // Recommendations
+            const recs = summary.recommendations || [];
+            document.getElementById('recommendationsList').innerHTML = 
+                recs.length > 0 
+                    ? recs.map((rec, i) => {
+                        const text = typeof rec === 'string' ? rec : rec.text || rec;
+                        const isUrgent = text.includes('[URGENTE]') || text.includes('URGENTE');
+                        const cleanText = text.replace('[URGENTE]', '').replace('[PRIORITY]', '').trim();
+                        return `
+                            <div class="rec-item ${isUrgent ? 'urgent' : ''}">
+                                <div class="rec-number">${i + 1}</div>
+                                <div class="rec-content">
+                                    <div class="rec-text">${escapeHtml(cleanText)}</div>
+                                    ${isUrgent ? '<span class="rec-tag urgent">Urgente</span>' : i < 2 ? '<span class="rec-tag priority">Priorità Alta</span>' : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')
+                    : '<div class="rec-item"><div class="rec-number">—</div><div class="rec-text">Completa l\'analisi per ricevere raccomandazioni personalizzate</div></div>';
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        function buildPillarDetails(key, data) {
+            let html = '';
+            
+            if (key === 'reputation' && data.score) {
+                const s = data.score;
+                html += `
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Rating medio</span><span class="pillar-detail-value">${data.averageRating?.toFixed(1) || 'N/A'} ⭐</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Totale recensioni</span><span class="pillar-detail-value">${data.totalReviews || 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Response rate</span><span class="pillar-detail-value">${data.responseRate ? data.responseRate + '%' : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Trend</span><span class="pillar-detail-value">${data.trendAnalysis?.overall_direction || 'N/A'}</span></div>
+                `;
+            }
+            
+            if (key === 'instagram' && data.score) {
+                const s = data.score;
+                html += `
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Follower</span><span class="pillar-detail-value">${data.profile?.followers?.toLocaleString() || 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Engagement</span><span class="pillar-detail-value">${s.breakdown?.engagement?.score || 'N/A'}/100</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Visual Identity</span><span class="pillar-detail-value">${s.breakdown?.visualIdentity?.score || 'N/A'}/100</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Copywriting</span><span class="pillar-detail-value">${s.breakdown?.copywriting?.score || 'N/A'}/100</span></div>
+                `;
+            }
+
+            if (key === 'website' && data.score) {
+                const s = data.score;
+                html += `
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Menu Quality</span><span class="pillar-detail-value">${s.breakdown?.menuQuality?.score || 'N/A'}/100</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">UX</span><span class="pillar-detail-value">${s.breakdown?.userExperience?.score || 'N/A'}/100</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">SEO</span><span class="pillar-detail-value">${s.breakdown?.seo?.score || 'N/A'}/100</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">CMS</span><span class="pillar-detail-value">${data.technical?.cms?.detected || 'N/A'}</span></div>
+                `;
+            }
+
+            if (key === 'google_business' && data.completeness) {
+                const c = data.completeness;
+                html += `
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Completezza</span><span class="pillar-detail-value">${c.finalScore}/100</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Foto</span><span class="pillar-detail-value">${c.breakdown?.photos?.value || 0}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Orari</span><span class="pillar-detail-value">${c.breakdown?.hours?.present ? '✓' : '✗'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Sito web</span><span class="pillar-detail-value">${c.breakdown?.website?.present ? '✓' : '✗'}</span></div>
+                `;
+            }
+
+            return html;
+        }
+
         function getScoreClass(score) {
-            if (score === null) return 'na';
+            if (score === null || score === undefined) return 'na';
             if (score >= 80) return 'excellent';
             if (score >= 65) return 'good';
             if (score >= 50) return 'fair';
