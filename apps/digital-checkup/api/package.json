@@ -1,0 +1,66 @@
+{
+  "name": "sf-ig-check",
+  "version": "3.0.0",
+  "description": "AI-powered digital presence analyzer for restaurants: Instagram, Websites, Reputation & Google My Business",
+  "main": "src/cli.js",
+  "type": "module",
+  "bin": {
+    "ig-check": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "mcp": "node src/mcp/server.js",
+    "mcp:sse": "node src/mcp/server-sse.js",
+    "test": "vitest",
+    "test:unit": "vitest tests/unit",
+    "test:integration": "vitest tests/integration",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch"
+  },
+  "keywords": [
+    "instagram",
+    "website-analyzer",
+    "food-business",
+    "reviews",
+    "reputation",
+    "google-places",
+    "google-my-business",
+    "gmb",
+    "tripadvisor",
+    "seo",
+    "ai",
+    "scoring",
+    "analysis",
+    "restaurant",
+    "digital-presence"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@modelcontextprotocol/sdk": "^1.20.1",
+    "axios": "^1.12.2",
+    "chalk": "^5.6.2",
+    "cheerio": "^1.1.2",
+    "chrome-launcher": "^1.2.1",
+    "commander": "^14.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "ora": "^9.0.0",
+    "puppeteer": "^24.15.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "supertest": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}
