@@ -32,20 +32,24 @@ async function scrapeWithOutscraper(query, outscraperApiKey, reviewsLimit = 30) 
     const client = getOutscraperClient(outscraperApiKey);
     console.log(`[Outscraper] Fetching up to ${reviewsLimit} reviews for: ${query}`);
 
-    // Use the reviews API with sort=newest to get recent reviews
-    // Correct parameter order: places, reviewsLimit, limit, sort, skip, start, cutoff, cutoffRating, ignoreEmpty, language, region
+    // Actual SDK signature from node_modules/outscraper/index.js:
+    // googleMapsReviews(query, reviewsLimit, reviewsQuery, limit, sort, lastPaginationId, start, cutoff, cutoffRating, ignoreEmpty, source, language, region, fields, asyncRequest)
     const response = await client.googleMapsReviews(
-      [query],        // places - array of queries
+      [query],        // query - array of business names/URLs
       reviewsLimit,   // reviewsLimit - max reviews per place (30)
+      null,           // reviewsQuery - filter by text (null = no filter)
       1,              // limit - max places to return
       'newest',       // sort - newest first
-      0,              // skip
+      null,           // lastPaginationId
       null,           // start
       null,           // cutoff timestamp
       null,           // cutoffRating
       true,           // ignoreEmpty - skip places with no reviews
+      'google',       // source
       'it',           // language
-      null            // region
+      null,           // region
+      '',             // fields
+      false           // asyncRequest - wait for results
     );
 
     if (!response || response.length === 0 || !response[0]) {
