@@ -467,43 +467,69 @@ function createJsonRpcError(code, message, id, data = null) {
  */
 const app = express();
 
-// Middleware
-app.use(cors()); // Enable CORS for n8n
+// Helper to check if origin is allowed
+function isOriginAllowed(origin) {
+  if (!origin) return true; // Non-browser clients
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) return true;
+  if (origin.includes('.github.io')) return true;
+  return false;
+}
+
+// CORS configuration - must be before other middleware
+// Explicitly configure for preflight requests
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (non-browser clients like curl, Postman)
+    if (!origin || isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Rejected origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Mcp-Session-Id', 'Accept', 'Last-Event-Id'],
+  exposedHeaders: ['Mcp-Session-Id'],
+  credentials: false,
+  optionsSuccessStatus: 204,
+  preflightContinue: false,
+};
+
+// Apply CORS middleware FIRST
+app.use(cors(corsOptions));
+
+// Handle OPTIONS preflight explicitly for all routes (backup)
+app.options('*', cors(corsOptions));
+
+// Parse JSON body
 app.use(express.json({ limit: '10mb' }));
 
-// Request logging
+// Request logging (with more detail for debugging)
 app.use((req, res, next) => {
-  console.log(`[HTTP] ${req.method} ${req.path}`);
+  const origin = req.headers.origin || 'no-origin';
+  console.log(`[HTTP] ${req.method} ${req.path} (origin: ${origin})`);
   next();
 });
 
 // Origin validation middleware (DNS rebinding protection)
 // MUST validate Origin header per MCP spec
+// Note: CORS middleware already handles preflight, this is for additional security
 function validateOrigin(req, res, next) {
   // Skip validation for health endpoint
   if (req.path === '/health') {
     return next();
   }
 
+  // Skip OPTIONS requests (handled by CORS middleware)
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   const origin = req.headers.origin;
 
-  // If no Origin header, allow (non-browser clients)
-  if (!origin) {
-    return next();
-  }
-
-  // Validate against allowed origins
-  if (ALLOWED_ORIGINS.includes(origin)) {
-    return next();
-  }
-
-  // Check if it's a Railway deployment URL
-  if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
-    return next();
-  }
-
-  // Check if it's a GitHub Pages URL (*.github.io)
-  if (origin.includes('.github.io')) {
+  // Check if origin is allowed
+  if (isOriginAllowed(origin)) {
     return next();
   }
 
@@ -582,6 +608,8 @@ function authenticateBearer(req, res, next) {
 
 // Health check endpoint (public, no authentication)
 app.get('/health', (req, res) => {
+  const origin = req.headers.origin || 'no-origin';
+  console.log(`[Health] Check from origin: ${origin}`);
   res.json({
     status: 'ok',
     service: 'sf-ig-check-mcp',
@@ -590,6 +618,10 @@ app.get('/health', (req, res) => {
     transport: 'Streamable HTTP',
     protocol: '2025-03-26',
     sessions: sessions.size,
+    cors: {
+      allowedOrigins: ALLOWED_ORIGINS,
+      dynamicOrigins: ['*.railway.app', '*.github.io'],
+    },
   });
 });
 
