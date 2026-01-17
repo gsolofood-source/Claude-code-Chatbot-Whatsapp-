@@ -175,6 +175,40 @@
         .rec-tag.urgent { background: var(--red-dim); color: var(--red); }
         .rec-tag.priority { background: var(--yellow-dim); color: var(--yellow); }
 
+        /* Qualitative Analysis Section */
+        .analysis-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+        .analysis-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .analysis-icon { font-size: 18px; }
+        .analysis-title { font-size: 13px; font-weight: 600; }
+        .analysis-content { padding: 16px 20px; }
+
+        .prognosis-box { background: var(--blue-dim); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+        .prognosis-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--blue); margin-bottom: 6px; }
+        .prognosis-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+
+        .sentiment-box { background: var(--bg-tertiary); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+        .sentiment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .sentiment-label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+        .sentiment-badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        .sentiment-badge.positive { background: var(--green-dim); color: var(--green); }
+        .sentiment-badge.neutral { background: var(--yellow-dim); color: var(--yellow); }
+        .sentiment-badge.negative { background: var(--red-dim); color: var(--red); }
+        .sentiment-themes { display: flex; flex-wrap: wrap; gap: 6px; }
+        .sentiment-theme { font-size: 11px; padding: 4px 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 12px; color: var(--text-secondary); }
+
+        .channels-analysis { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .channel-box { background: var(--bg-tertiary); border-radius: 8px; padding: 12px 14px; }
+        .channel-name { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+        .channel-status { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+        .channel-urgency { font-size: 10px; font-weight: 500; text-transform: uppercase; }
+        .channel-urgency.high { color: var(--red); }
+        .channel-urgency.medium { color: var(--yellow); }
+        .channel-urgency.low { color: var(--green); }
+        .channel-areas { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .area-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+        .area-tag.strong { background: var(--green-dim); color: var(--green); }
+        .area-tag.weak { background: var(--red-dim); color: var(--red); }
+
         .cta-section { text-align: center; padding: 32px 20px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; }
         .cta-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
         .cta-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
@@ -312,6 +346,43 @@
                     <span class="recs-title">Piano d'Azione Prioritario</span>
                 </div>
                 <div id="recommendationsList"></div>
+            </div>
+
+            <!-- Analisi Qualitativa Globale -->
+            <div class="analysis-card" id="qualitativeSection" style="display: none;">
+                <div class="analysis-header">
+                    <span class="analysis-icon">📊</span>
+                    <span class="analysis-title">Analisi Qualitativa</span>
+                </div>
+                <div class="analysis-content">
+                    <div class="prognosis-box" id="prognosisBox">
+                        <div class="prognosis-label">Prognosi</div>
+                        <p class="prognosis-text" id="prognosisText">--</p>
+                    </div>
+                    <div class="sentiment-box" id="sentimentBox">
+                        <div class="sentiment-header">
+                            <span class="sentiment-label">Sentiment Recensioni</span>
+                            <span class="sentiment-badge" id="sentimentBadge">--</span>
+                        </div>
+                        <div class="sentiment-themes" id="sentimentThemes"></div>
+                    </div>
+                    <div class="channels-analysis">
+                        <div class="channel-box" id="reputationAnalysis">
+                            <div class="channel-name">⭐ Reputazione</div>
+                            <div class="channel-status" id="reputationStatus">--</div>
+                            <div class="channel-urgency" id="reputationUrgency"></div>
+                        </div>
+                        <div class="channel-box" id="instagramAnalysis">
+                            <div class="channel-name">📱 Instagram</div>
+                            <div class="channel-status" id="instagramStatus">--</div>
+                            <div class="channel-areas" id="instagramAreas"></div>
+                        </div>
+                        <div class="channel-box" id="gmbAnalysis">
+                            <div class="channel-name">📍 Google Business</div>
+                            <div class="channel-areas" id="gmbAreas"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="cta-section">
@@ -615,7 +686,111 @@
                     }).join('')
                     : '<div class="rec-item"><div class="rec-number">—</div><div class="rec-text">Completa l\'analisi per ricevere raccomandazioni personalizzate</div></div>';
 
+            // Qualitative Analysis Section
+            displayQualitativeAnalysis(pillars);
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function displayQualitativeAnalysis(pillars) {
+            const section = document.getElementById('qualitativeSection');
+            let hasContent = false;
+
+            // Reputation Executive Summary
+            const repData = pillars.reputation?.data || {};
+            const repExec = repData.executiveSummary || {};
+            const sentiment = repData.sentimentAnalysis || {};
+
+            // Prognosis
+            if (repExec.prognosis) {
+                document.getElementById('prognosisText').textContent = repExec.prognosis;
+                document.getElementById('prognosisBox').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('prognosisBox').style.display = 'none';
+            }
+
+            // Sentiment Analysis
+            if (sentiment.sentiment_score !== undefined || sentiment.overall_tone) {
+                const sentimentBadge = document.getElementById('sentimentBadge');
+                const tone = sentiment.overall_tone || '';
+                const score = sentiment.sentiment_score;
+
+                let badgeClass = 'neutral';
+                let badgeText = 'Neutro';
+                if (tone.includes('POSITIVO') || score >= 70) {
+                    badgeClass = 'positive';
+                    badgeText = score ? `${score}% Positivo` : 'Molto Positivo';
+                } else if (tone.includes('NEGATIVO') || score < 40) {
+                    badgeClass = 'negative';
+                    badgeText = score ? `${score}% Negativo` : 'Negativo';
+                } else {
+                    badgeText = score ? `${score}%` : 'Neutro';
+                }
+
+                sentimentBadge.className = 'sentiment-badge ' + badgeClass;
+                sentimentBadge.textContent = badgeText;
+
+                // Themes
+                const themes = sentiment.positive_themes || [];
+                document.getElementById('sentimentThemes').innerHTML = themes.slice(0, 4).map(t =>
+                    `<span class="sentiment-theme">${escapeHtml(t.theme)}</span>`
+                ).join('');
+
+                document.getElementById('sentimentBox').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('sentimentBox').style.display = 'none';
+            }
+
+            // Reputation Channel Analysis
+            if (repExec.status) {
+                document.getElementById('reputationStatus').textContent = repExec.status;
+                const urgency = repExec.urgency_level || '';
+                const urgencyEl = document.getElementById('reputationUrgency');
+                if (urgency) {
+                    urgencyEl.textContent = `Urgenza: ${urgency}`;
+                    urgencyEl.className = 'channel-urgency ' + urgency.toLowerCase();
+                }
+                document.getElementById('reputationAnalysis').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('reputationAnalysis').style.display = 'none';
+            }
+
+            // Instagram Channel Analysis
+            const igExec = pillars.instagram?.data?.executiveSummary || {};
+            if (igExec.status || igExec.strongAreas?.length || igExec.weakAreas?.length) {
+                if (igExec.status) {
+                    document.getElementById('instagramStatus').textContent = igExec.status;
+                }
+                const areasHtml = [
+                    ...(igExec.strongAreas || []).slice(0, 3).map(a => `<span class="area-tag strong">${escapeHtml(a)}</span>`),
+                    ...(igExec.weakAreas || []).slice(0, 2).map(a => `<span class="area-tag weak">${escapeHtml(a)}</span>`)
+                ].join('');
+                document.getElementById('instagramAreas').innerHTML = areasHtml;
+                document.getElementById('instagramAnalysis').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('instagramAnalysis').style.display = 'none';
+            }
+
+            // GMB Channel Analysis
+            const gmbComp = pillars.googleBusiness?.data?.completeness || {};
+            if (gmbComp.strongAreas?.length || gmbComp.weakAreas?.length) {
+                const areasHtml = [
+                    ...(gmbComp.strongAreas || []).slice(0, 3).map(a => `<span class="area-tag strong">${escapeHtml(a)}</span>`),
+                    ...(gmbComp.weakAreas || []).slice(0, 2).map(a => `<span class="area-tag weak">${escapeHtml(a)}</span>`)
+                ].join('');
+                document.getElementById('gmbAreas').innerHTML = areasHtml;
+                document.getElementById('gmbAnalysis').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('gmbAnalysis').style.display = 'none';
+            }
+
+            // Show section only if there's content
+            section.style.display = hasContent ? 'block' : 'none';
         }
 
         function buildPillarDetails(key, data, pillarInfo) {
