@@ -196,21 +196,60 @@ function analyzeHours(gmbData) {
 
 /**
  * Analyzes business attributes (amenities, services)
+ * Handles both array format (Google Places API) and object format (Outscraper)
  */
 function analyzeAttributes(gmbData) {
-  const attributes = gmbData.attributes || [];
-  const attributeCount = attributes.length;
+  const rawAttributes = gmbData.attributes;
+
+  // Normalize attributes to array format
+  let attributes = [];
+  let attributeCount = 0;
+
+  if (Array.isArray(rawAttributes)) {
+    // Google Places API format: ['delivery', 'takeout', ...]
+    attributes = rawAttributes;
+    attributeCount = attributes.length;
+  } else if (rawAttributes && typeof rawAttributes === 'object') {
+    // Outscraper format: could be object with keys or nested structure
+    // Convert to array of strings for searching
+    const flattenObject = (obj, prefix = '') => {
+      let result = [];
+      for (const [key, value] of Object.entries(obj)) {
+        const fullKey = prefix ? `${prefix}_${key}` : key;
+        if (typeof value === 'object' && value !== null) {
+          result = result.concat(flattenObject(value, fullKey));
+        } else if (value === true || value) {
+          result.push(fullKey.toLowerCase());
+          if (typeof value === 'string') {
+            result.push(value.toLowerCase());
+          }
+        }
+      }
+      return result;
+    };
+    attributes = flattenObject(rawAttributes);
+    attributeCount = Object.keys(rawAttributes).length;
+  }
+
+  // Helper function to check if attribute exists (case-insensitive, partial match)
+  const hasAttribute = (...keywords) => {
+    return attributes.some(attr =>
+      keywords.some(keyword =>
+        attr.toLowerCase().includes(keyword.toLowerCase())
+      )
+    );
+  };
 
   // Key attributes to check
   const keyAttributes = {
-    hasDelivery: attributes.includes('delivery') || attributes.includes('consegna'),
-    hasTakeout: attributes.includes('takeout') || attributes.includes('asporto'),
-    hasDineIn: attributes.includes('dine_in') || attributes.includes('servizio_al_tavolo'),
-    hasReservation: attributes.includes('reservable') || attributes.includes('prenotabile'),
-    hasWifi: attributes.includes('free_wifi') || attributes.includes('wifi'),
-    hasParking: attributes.includes('parking') || attributes.includes('parcheggio'),
-    hasAccessibility: attributes.includes('wheelchair_accessible') || attributes.includes('accessibile'),
-    hasOutdoorSeating: attributes.includes('outdoor_seating') || attributes.includes('posti_esterni'),
+    hasDelivery: hasAttribute('delivery', 'consegna', 'delivers'),
+    hasTakeout: hasAttribute('takeout', 'asporto', 'takeaway'),
+    hasDineIn: hasAttribute('dine_in', 'servizio_al_tavolo', 'dine-in', 'dining'),
+    hasReservation: hasAttribute('reservable', 'prenotabile', 'reservation', 'prenotazione'),
+    hasWifi: hasAttribute('free_wifi', 'wifi', 'wi-fi'),
+    hasParking: hasAttribute('parking', 'parcheggio'),
+    hasAccessibility: hasAttribute('wheelchair_accessible', 'accessibile', 'wheelchair', 'accessibility'),
+    hasOutdoorSeating: hasAttribute('outdoor_seating', 'posti_esterni', 'outdoor', 'terrazza', 'dehors'),
     hasMenu: !!gmbData.hasMenu
   };
 
