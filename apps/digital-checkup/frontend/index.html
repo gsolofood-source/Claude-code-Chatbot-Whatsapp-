@@ -1077,23 +1077,34 @@
         }
 
         function displayResults(result, displayName) {
-            const data = result.data || result;
-            const globalScore = data.globalScore || {};
+            // Handle MCP-style response: { content: [{ type: "text", text: "JSON" }] }
+            let parsed = result;
+            if (result.content && Array.isArray(result.content) && result.content[0]?.text) {
+                try {
+                    parsed = JSON.parse(result.content[0].text);
+                } catch (e) {
+                    console.error('Failed to parse MCP response:', e);
+                }
+            }
+
+            const data = parsed.data || parsed;
+            // globalScore can be a number or an object
+            const globalScoreValue = typeof data.globalScore === 'number' ? data.globalScore : (data.globalScore?.finalScore || 0);
             const summary = data.summary || {};
-            const breakdown = globalScore.breakdown || {};
+            const breakdown = data.breakdown || {};
 
             // Score
-            const score = globalScore.finalScore || 0;
+            const score = globalScoreValue;
             const scoreEl = document.getElementById('globalScore');
             scoreEl.innerHTML = `${score}<span class="score-max">/100</span>`;
             scoreEl.className = 'score-value ' + getScoreClass(score);
 
             // Status
-            document.getElementById('globalStatus').textContent = summary.status || globalScore.status || 'Analisi completata';
+            document.getElementById('globalStatus').textContent = summary.status || 'Analisi completata';
             document.getElementById('businessNameDisplay').textContent = displayName;
 
             // Risk badge
-            const riskLevel = summary.riskLevel || globalScore.riskLevel || 'LOW';
+            const riskLevel = summary.riskLevel || data.riskLevel || 'LOW';
             const riskBadge = document.getElementById('riskBadge');
             riskBadge.className = 'risk-badge ' + riskLevel.toLowerCase();
             riskBadge.textContent = { LOW: '✓ Rischio Basso', MEDIUM: '⚠ Rischio Medio', HIGH: '⚠ Rischio Alto' }[riskLevel] || 'Rischio Basso';
@@ -1114,9 +1125,12 @@
 
             pillarConfig.forEach(({ key, name, emoji, dataKey }) => {
                 const pillar = breakdown[key] || {};
-                const pillarData = data[dataKey] || data.results?.[dataKey] || {};
-                const score = pillar.score;
-                const available = pillar.available;
+                // Get pillar data from data.pillars[dataKey].data or fallback
+                const pillarsObj = data.pillars || {};
+                const pillarInfo = pillarsObj[dataKey] || {};
+                const pillarData = pillarInfo.data || data[dataKey] || {};
+                const score = pillar.score ?? pillarInfo.score;
+                const available = pillar.available ?? (pillarInfo.status === 'success');
                 const weight = pillar.adjustedWeight || pillar.weight || 0;
                 const scoreClass = getScoreClass(score);
 
