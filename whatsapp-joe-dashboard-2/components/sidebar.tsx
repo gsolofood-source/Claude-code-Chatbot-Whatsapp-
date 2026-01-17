@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { BarChart3, MessageSquare, Settings, Bot, Phone, FileText } from "lucide-react";
+import { BarChart3, MessageSquare, Settings, Bot, Phone, FileText, TrendingUp } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Conversations", href: "/conversations", icon: MessageSquare },
   { name: "Chat Logs", href: "/chat-logs", icon: FileText },
   { name: "Calls", href: "/calls", icon: Phone },
+  { name: "Analytics", href: "/analytics", icon: TrendingUp },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
