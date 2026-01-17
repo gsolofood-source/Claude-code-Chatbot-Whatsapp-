@@ -55,6 +55,7 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:3000',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
+  'https://gsolofood-source.github.io', // GitHub Pages frontend
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : []),
 ];
 
@@ -498,6 +499,11 @@ function validateOrigin(req, res, next) {
 
   // Check if it's a Railway deployment URL
   if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
+    return next();
+  }
+
+  // Check if it's a GitHub Pages URL (*.github.io)
+  if (origin.includes('.github.io')) {
     return next();
   }
 
