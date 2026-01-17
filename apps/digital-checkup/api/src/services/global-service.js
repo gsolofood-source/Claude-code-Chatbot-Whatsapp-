@@ -41,8 +41,9 @@ export async function analyzeGlobal(options) {
   } = options;
 
   // Validate API keys
-  if (!googleApiKey) {
-    throw new Error('googleApiKey is required');
+  // googleApiKey is only required if businessName is provided (for GMB/Reputation analysis)
+  if (businessName && !googleApiKey) {
+    throw new Error('googleApiKey is required for Google Business analysis');
   }
   if (!anthropicApiKey) {
     throw new Error('anthropicApiKey is required');
