@@ -13,6 +13,7 @@ import { analyzeGMBCompleteness } from '../analyzers/gmb-analyzer.js';
  * @param {Object} options - Analysis options
  * @param {string} options.businessName - Restaurant name and location
  * @param {string} options.googleApiKey - Google Places API key
+ * @param {string} [options.outscraperApiKey] - Optional Outscraper API key for better data
  * @param {string} [options.placeId] - Optional Google Place ID for precise identification
  * @param {Function} [options.progressCallback] - Optional callback for progress updates
  * @returns {Promise<Object>} GMB completeness analysis results
@@ -21,6 +22,7 @@ export async function analyzeGMB(options) {
   const {
     businessName,
     googleApiKey,
+    outscraperApiKey = null,
     placeId = null,
     progressCallback = () => {},
   } = options;
@@ -33,9 +35,9 @@ export async function analyzeGMB(options) {
     throw new Error('googleApiKey is required');
   }
 
-  // Step 1: Scrape Google Place data
+  // Step 1: Scrape Google Place data (uses Outscraper if available)
   progressCallback('Fetching Google My Business data...');
-  const placeData = await scrapeGoogleReviews(businessName, googleApiKey, placeId);
+  const placeData = await scrapeGoogleReviews(businessName, googleApiKey, placeId, outscraperApiKey);
 
   // Step 2: Analyze GMB completeness (rule-based, no AI)
   progressCallback('Analyzing GMB completeness...');

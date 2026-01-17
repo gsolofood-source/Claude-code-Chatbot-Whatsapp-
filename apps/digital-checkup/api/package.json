@@ -52,6 +52,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.18.2",
     "ora": "^9.0.0",
+    "outscraper": "^2.2.0",
     "puppeteer": "^24.15.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",

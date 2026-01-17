@@ -21,6 +21,7 @@ import { calculateGlobalScore, generateGlobalSummary } from '../scorers/global-c
  * @param {string} [options.businessName] - Business name and location (for Google analysis)
  * @param {string} options.googleApiKey - Google Places API key
  * @param {string} options.anthropicApiKey - Anthropic API key for AI analysis
+ * @param {string} [options.outscraperApiKey] - Optional Outscraper API key for more reviews (30+)
  * @param {string} [options.placeId] - Optional Google Place ID for precise identification
  * @param {string} [options.instagramUsername] - Optional Instagram username to analyze
  * @param {string} [options.websiteUrl] - Optional website URL to analyze
@@ -33,6 +34,7 @@ export async function analyzeGlobal(options) {
     businessName = null,
     googleApiKey,
     anthropicApiKey,
+    outscraperApiKey = null,
     placeId = null,
     instagramUsername = null,
     websiteUrl = null,
@@ -67,6 +69,7 @@ export async function analyzeGlobal(options) {
         businessName,
         googleApiKey,
         anthropicApiKey,
+        outscraperApiKey,
         placeId,
         verbose,
         progressCallback: (msg) => progressCallback(`Reputation: ${msg}`),
@@ -93,6 +96,7 @@ export async function analyzeGlobal(options) {
       const gmbData = await analyzeGMB({
         businessName,
         googleApiKey,
+        outscraperApiKey,
         placeId,
         progressCallback: (msg) => progressCallback(`GMB: ${msg}`),
       });

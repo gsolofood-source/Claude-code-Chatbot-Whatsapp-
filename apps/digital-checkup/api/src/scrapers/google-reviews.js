@@ -1,4 +1,140 @@
 import axios from 'axios';
+import Outscraper from 'outscraper';
+
+/**
+ * Outscraper API client for fetching more reviews (up to 30+)
+ * Falls back to Google Places API if Outscraper is not configured
+ */
+let outscraperClient = null;
+
+function getOutscraperClient(apiKey) {
+  if (!outscraperClient && apiKey) {
+    outscraperClient = new Outscraper(apiKey);
+  }
+  return outscraperClient;
+}
+
+/**
+ * Scrape reviews using Outscraper API (up to 30 most recent reviews)
+ *
+ * @param {string} query - Business name or Google Maps URL or Place ID
+ * @param {string} outscraperApiKey - Outscraper API key
+ * @param {number} reviewsLimit - Maximum reviews to fetch (default 30)
+ * @returns {Promise<Object|null>} Reviews data or null if failed
+ */
+async function scrapeWithOutscraper(query, outscraperApiKey, reviewsLimit = 30) {
+  if (!outscraperApiKey) {
+    console.log('[Outscraper] No API key configured, skipping');
+    return null;
+  }
+
+  try {
+    const client = getOutscraperClient(outscraperApiKey);
+    console.log(`[Outscraper] Fetching up to ${reviewsLimit} reviews for: ${query}`);
+
+    // Use the reviews API with sort=newest to get recent reviews
+    const response = await client.googleMapsReviews(
+      [query],
+      reviewsLimit,  // reviewsLimit
+      'it',          // language (Italian)
+      null,          // region
+      'newest'       // sort by newest first
+    );
+
+    if (!response || response.length === 0 || !response[0]) {
+      console.log('[Outscraper] No results returned');
+      return null;
+    }
+
+    const place = response[0];
+
+    // Check for errors in response
+    if (place.query_status === 'Error' || !place.name) {
+      console.log('[Outscraper] Query error:', place.query_status);
+      return null;
+    }
+
+    console.log(`[Outscraper] Found: ${place.name} with ${place.reviews_data?.length || 0} reviews`);
+
+    // Transform Outscraper response to our format
+    const reviews = (place.reviews_data || []).map(review => ({
+      author: review.author_title || review.author_name || 'Anonymous',
+      rating: review.review_rating || 0,
+      date: review.review_datetime_utc?.split(' ')[0] || '',
+      text: review.review_text || '',
+      relativeTime: review.review_timestamp ? getRelativeTime(review.review_timestamp) : '',
+      timestamp: review.review_timestamp || Math.floor(new Date(review.review_datetime_utc).getTime() / 1000),
+      helpful: review.review_likes || null,
+      ownerResponse: review.owner_answer || null,
+      ownerResponseDate: review.owner_answer_timestamp_datetime_utc || null
+    }));
+
+    // Count owner responses for response rate
+    const responsesCount = reviews.filter(r => r.ownerResponse).length;
+    const responseRate = reviews.length > 0 ? Math.round((responsesCount / reviews.length) * 100) : 0;
+
+    // Calculate rating distribution from reviews
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach(review => {
+      if (review.rating >= 1 && review.rating <= 5) {
+        distribution[review.rating]++;
+      }
+    });
+
+    return {
+      platform: 'google',
+      source: 'outscraper',
+      restaurantName: place.name,
+      address: place.full_address || place.address || '',
+      mapsUrl: place.place_url || '',
+      placeId: place.place_id || null,
+      rating: place.rating || 0,
+      totalReviews: place.reviews || 0,
+      reviews: reviews,
+      ratingDistribution: distribution,
+      responseRate: responseRate,
+      isOpen: place.working_hours?.is_open_now ?? null,
+      multipleResultsWarning: null,
+      scrapedAt: new Date().toISOString(),
+      // GMB Completeness Data from Outscraper
+      photoCount: place.photos_count || 0,
+      hasLogo: !!place.logo,
+      hasCoverPhoto: place.photos_count > 0,
+      hasOpeningHours: !!place.working_hours,
+      hoursComplete: place.working_hours?.weekday_text?.length === 7,
+      hasMenu: !!place.menu_link,
+      website: place.site || '',
+      phoneNumber: place.phone || '',
+      description: place.description || '',
+      primaryCategory: place.type || place.subtypes?.[0] || '',
+      secondaryCategories: place.subtypes?.slice(1) || [],
+      attributes: place.about || [],
+      hasRecentPosts: false,
+      postCount30d: 0,
+      hasQA: false
+    };
+
+  } catch (error) {
+    console.error('[Outscraper] Error:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Get relative time string from timestamp
+ */
+function getRelativeTime(timestamp) {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - timestamp;
+
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+  if (diff < 2592000) return `${Math.floor(diff / 604800)} weeks ago`;
+  if (diff < 31536000) return `${Math.floor(diff / 2592000)} months ago`;
+  return `${Math.floor(diff / 31536000)} years ago`;
+}
 
 /**
  * Resolve a Google Maps URL (short or full) to extract Place ID
@@ -116,8 +252,8 @@ export function isGoogleMapsUrl(str) {
  * Google Places API (Hybrid) scraper for restaurant reviews
  *
  * Uses:
- * - Places API (New) for search and basic data
- * - Places API (Legacy) for detailed reviews (up to 20)
+ * - Outscraper API (primary) for up to 30 recent reviews
+ * - Places API (fallback) for basic data if Outscraper unavailable
  *
  * Accepts:
  * - businessName: "Restaurant Name, City" OR a Google Maps URL
@@ -126,9 +262,22 @@ export function isGoogleMapsUrl(str) {
  * @param {string} businessName - Restaurant name/location OR Google Maps URL
  * @param {string} apiKey - Google Places API key
  * @param {string} placeId - Optional Google Place ID for direct lookup
+ * @param {string} outscraperApiKey - Optional Outscraper API key for more reviews
  * @returns {Promise<Object>} Reviews data with ratings, reviews, and metadata
  */
-export async function scrapeGoogleReviews(businessName, apiKey, placeId = null) {
+export async function scrapeGoogleReviews(businessName, apiKey, placeId = null, outscraperApiKey = null) {
+  // Try Outscraper first if API key is available
+  if (outscraperApiKey) {
+    const query = placeId || businessName;
+    const outscraperResult = await scrapeWithOutscraper(query, outscraperApiKey, 30);
+
+    if (outscraperResult && outscraperResult.reviews.length > 0) {
+      console.log(`[Scraper] Using Outscraper data: ${outscraperResult.reviews.length} reviews`);
+      return outscraperResult;
+    }
+
+    console.log('[Scraper] Outscraper failed or no reviews, falling back to Google Places API');
+  }
   if (!apiKey) {
     throw new Error('GOOGLE_PLACES_API_KEY not found in environment variables');
   }

@@ -35,6 +35,7 @@ dotenv.config();
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
+const OUTSCRAPER_API_KEY = process.env.OUTSCRAPER_API_KEY;
 const API_BEARER_TOKEN = process.env.API_BEARER_TOKEN;
 const PORT = process.env.PORT || 3000;
 const BIND_ADDRESS = process.env.BIND_ADDRESS || '0.0.0.0'; // 127.0.0.1 for local, 0.0.0.0 for Railway
@@ -44,6 +45,7 @@ const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
 console.log('[ENV] Environment variables status:');
 console.log(`  - ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY ? '✓ Set' : '✗ Missing'}`);
 console.log(`  - GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY ? '✓ Set' : '✗ Missing'}`);
+console.log(`  - OUTSCRAPER_API_KEY: ${OUTSCRAPER_API_KEY ? '✓ Set (30 reviews mode)' : '✗ Missing (5 reviews fallback)'}`);
 console.log(`  - API_BEARER_TOKEN: ${API_BEARER_TOKEN ? '✓ Set' : '✗ Missing'}`);
 console.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
 console.log(`  - PORT: ${PORT}`);
@@ -272,6 +274,7 @@ async function executeToolCall(name, args, requestId, sessionId, progressToken) 
           businessName,
           googleApiKey: GOOGLE_PLACES_API_KEY,
           anthropicApiKey: ANTHROPIC_API_KEY,
+          outscraperApiKey: OUTSCRAPER_API_KEY,
           placeId,
           verbose,
           progressCallback,
@@ -286,6 +289,7 @@ async function executeToolCall(name, args, requestId, sessionId, progressToken) 
         const result = await analyzeGMB({
           businessName,
           googleApiKey: GOOGLE_PLACES_API_KEY,
+          outscraperApiKey: OUTSCRAPER_API_KEY,
           placeId,
           progressCallback,
         });
@@ -300,6 +304,7 @@ async function executeToolCall(name, args, requestId, sessionId, progressToken) 
           businessName,
           googleApiKey: GOOGLE_PLACES_API_KEY,
           anthropicApiKey: ANTHROPIC_API_KEY,
+          outscraperApiKey: OUTSCRAPER_API_KEY,
           placeId,
           instagramUsername,
           websiteUrl,
