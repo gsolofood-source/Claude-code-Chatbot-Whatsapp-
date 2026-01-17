@@ -182,6 +182,9 @@
         .analysis-title { font-size: 13px; font-weight: 600; }
         .analysis-content { padding: 16px 20px; }
 
+        .global-comment-box { background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; }
+        .global-comment-text { font-size: 14px; color: var(--text-primary); line-height: 1.7; margin: 0; font-style: italic; }
+
         .prognosis-box { background: var(--blue-dim); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
         .prognosis-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--blue); margin-bottom: 6px; }
         .prognosis-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0; }
@@ -355,6 +358,9 @@
                     <span class="analysis-title">Analisi Qualitativa</span>
                 </div>
                 <div class="analysis-content">
+                    <div class="global-comment-box" id="globalCommentBox">
+                        <p class="global-comment-text" id="globalCommentText">--</p>
+                    </div>
                     <div class="prognosis-box" id="prognosisBox">
                         <div class="prognosis-label">Prognosi</div>
                         <p class="prognosis-text" id="prognosisText">--</p>
@@ -700,6 +706,15 @@
             const repData = pillars.reputation?.data || {};
             const repExec = repData.executiveSummary || {};
             const sentiment = repData.sentimentAnalysis || {};
+
+            // Global Comment (key_insight from reputation)
+            if (repExec.key_insight) {
+                document.getElementById('globalCommentText').textContent = repExec.key_insight;
+                document.getElementById('globalCommentBox').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('globalCommentBox').style.display = 'none';
+            }
 
             // Prognosis
             if (repExec.prognosis) {
