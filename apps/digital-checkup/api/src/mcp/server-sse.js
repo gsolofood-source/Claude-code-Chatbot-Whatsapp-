@@ -627,6 +627,11 @@ app.get('/health', (req, res) => {
       allowedOrigins: ALLOWED_ORIGINS,
       dynamicOrigins: ['*.railway.app', '*.github.io'],
     },
+    env: {
+      ANTHROPIC_API_KEY: ANTHROPIC_API_KEY ? '✓ Set' : '✗ Missing',
+      GOOGLE_PLACES_API_KEY: GOOGLE_PLACES_API_KEY ? '✓ Set' : '✗ Missing',
+      OUTSCRAPER_API_KEY: OUTSCRAPER_API_KEY ? `✓ Set (${OUTSCRAPER_API_KEY.substring(0, 4)}...)` : '✗ Missing',
+    },
   });
 });
 
