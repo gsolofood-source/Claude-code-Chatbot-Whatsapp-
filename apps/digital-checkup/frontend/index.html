@@ -28,11 +28,7 @@
             --blue-dim: rgba(59,130,246,0.15);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -59,738 +55,187 @@
             z-index: 100;
         }
 
-        .logo {
-            font-weight: 600;
-            font-size: 15px;
-            letter-spacing: -0.3px;
-        }
+        .logo { font-weight: 600; font-size: 15px; letter-spacing: -0.3px; }
+        .logo span { color: var(--text-muted); }
+        .header-tag { font-size: 11px; color: var(--text-muted); padding: 5px 10px; border: 1px solid var(--border); border-radius: 4px; }
 
-        .logo span {
-            color: var(--text-muted);
-        }
+        .main { max-width: 640px; margin: 0 auto; padding: 100px 20px 60px; }
 
-        .header-tag {
-            font-size: 11px;
-            color: var(--text-muted);
-            padding: 5px 10px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-        }
+        .hero { text-align: center; margin-bottom: 40px; }
+        .hero-label { display: inline-block; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; }
+        .hero h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 12px; }
+        .hero p { font-size: 14px; color: var(--text-secondary); }
 
-        .main {
-            max-width: 640px;
-            margin: 0 auto;
-            padding: 100px 20px 60px;
-        }
+        .form-container { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+        .input-group { margin-bottom: 16px; }
+        .input-group:last-of-type { margin-bottom: 20px; }
+        .input-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .input-icon { width: 16px; height: 16px; opacity: 0.5; }
+        .input-label-text { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+        .input-field { width: 100%; padding: 12px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; color: var(--text-primary); transition: border-color 0.2s; }
+        .input-field:focus { outline: none; border-color: var(--border-focus); }
+        .input-field::placeholder { color: var(--text-muted); }
 
-        .hero {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .hero-label {
-            display: inline-block;
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-        }
-
-        .hero h1 {
-            font-size: 28px;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-            line-height: 1.2;
-            margin-bottom: 12px;
-        }
-
-        .hero p {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .form-container {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-        }
-
-        .input-group {
-            margin-bottom: 16px;
-        }
-
-        .input-group:last-of-type {
-            margin-bottom: 20px;
-        }
-
-        .input-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .input-icon {
-            width: 16px;
-            height: 16px;
-            opacity: 0.5;
-        }
-
-        .input-label-text {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-
-        .input-field {
-            width: 100%;
-            padding: 12px 14px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: inherit;
-            color: var(--text-primary);
-            transition: border-color 0.2s;
-        }
-
-        .input-field:focus {
-            outline: none;
-            border-color: var(--border-focus);
-        }
-
-        .input-field::placeholder {
-            color: var(--text-muted);
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 14px 20px;
-            background: var(--text-primary);
-            color: var(--bg-primary);
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .submit-btn:hover {
-            opacity: 0.9;
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .submit-btn .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid transparent;
-            border-top-color: var(--bg-primary);
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            display: none;
-        }
-
+        .submit-btn { width: 100%; padding: 14px 20px; background: var(--text-primary); color: var(--bg-primary); border: none; border-radius: 8px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .submit-btn .spinner { width: 16px; height: 16px; border: 2px solid transparent; border-top-color: var(--bg-primary); border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
         .submit-btn.loading .spinner { display: block; }
         .submit-btn.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .form-note { margin-top: 16px; font-size: 12px; color: var(--text-muted); text-align: center; }
+        .error-message { background: var(--red-dim); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
+        .error-message.visible { display: block; }
 
-        .form-note {
-            margin-top: 16px;
-            font-size: 12px;
-            color: var(--text-muted);
-            text-align: center;
-        }
+        .results-section { display: none; }
+        .results-section.visible { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .error-message {
-            background: var(--red-dim);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: var(--red);
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-top: 12px;
-            display: none;
-        }
-
-        .error-message.visible {
-            display: block;
-        }
-
-        /* Results */
-        .results-section {
-            display: none;
-        }
-
-        .results-section.visible {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Score Hero */
-        .score-hero {
-            text-align: center;
-            padding: 40px 20px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            margin-bottom: 20px;
-        }
-
-        .score-label {
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-
-        .score-value {
-            font-size: 72px;
-            font-weight: 700;
-            letter-spacing: -4px;
-            line-height: 1;
-        }
-
+        .score-hero { text-align: center; padding: 40px 20px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 20px; }
+        .score-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .score-value { font-size: 72px; font-weight: 700; letter-spacing: -4px; line-height: 1; }
         .score-value.excellent { color: var(--green); }
         .score-value.good { color: #84CC16; }
         .score-value.fair { color: var(--yellow); }
         .score-value.poor { color: #F97316; }
         .score-value.critical { color: var(--red); }
-
-        .score-max {
-            font-size: 18px;
-            color: var(--text-muted);
-            font-weight: 400;
-        }
-
-        .score-status {
-            font-size: 16px;
-            font-weight: 500;
-            margin-top: 8px;
-        }
-
-        .score-business {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .risk-badge {
-            display: inline-block;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 16px;
-        }
-
+        .score-max { font-size: 18px; color: var(--text-muted); font-weight: 400; }
+        .score-status { font-size: 16px; font-weight: 500; margin-top: 8px; }
+        .score-business { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+        .risk-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 16px; }
         .risk-badge.low { background: var(--green-dim); color: var(--green); }
         .risk-badge.medium { background: var(--yellow-dim); color: var(--yellow); }
         .risk-badge.high { background: var(--red-dim); color: var(--red); }
 
-        /* Key Insight */
-        .insight-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+        .insight-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .insight-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .insight-icon { font-size: 20px; }
+        .insight-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .insight-text { font-size: 15px; color: var(--text-primary); line-height: 1.6; }
 
-        .insight-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
+        .section-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-top: 8px; }
 
-        .insight-icon {
-            font-size: 20px;
-        }
-
-        .insight-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .insight-text {
-            font-size: 15px;
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        /* Section Title */
-        .section-title {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            margin-top: 8px;
-        }
-
-        /* Pillars Grid */
-        .pillars-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .pillar-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .pillar-card:hover {
-            border-color: var(--border-focus);
-        }
-
-        .pillar-card.unavailable {
-            opacity: 0.4;
-            cursor: default;
-        }
-
-        .pillar-card.expanded {
-            grid-column: 1 / -1;
-        }
-
-        .pillar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-
-        .pillar-name {
-            font-size: 12px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .pillar-emoji {
-            font-size: 14px;
-        }
-
-        .pillar-weight {
-            font-size: 10px;
-            color: var(--text-muted);
-            background: var(--bg-tertiary);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .pillar-score {
-            font-size: 32px;
-            font-weight: 700;
-            letter-spacing: -1px;
-            margin-bottom: 8px;
-        }
-
+        .pillars-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .pillar-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; }
+        .pillar-card:hover { border-color: var(--border-focus); }
+        .pillar-card.unavailable { opacity: 0.4; cursor: default; }
+        .pillar-card.expanded { grid-column: 1 / -1; }
+        .pillar-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .pillar-name { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+        .pillar-emoji { font-size: 14px; }
+        .pillar-weight { font-size: 10px; color: var(--text-muted); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; }
+        .pillar-score { font-size: 32px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px; }
         .pillar-score.excellent { color: var(--green); }
         .pillar-score.good { color: #84CC16; }
         .pillar-score.fair { color: var(--yellow); }
         .pillar-score.poor { color: #F97316; }
         .pillar-score.critical { color: var(--red); }
         .pillar-score.na { color: var(--text-muted); font-size: 16px; }
-
-        .pillar-bar {
-            height: 4px;
-            background: var(--bg-tertiary);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .pillar-bar-fill {
-            height: 100%;
-            border-radius: 2px;
-            transition: width 0.8s ease;
-        }
-
+        .pillar-bar { height: 4px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; }
+        .pillar-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
         .pillar-bar-fill.excellent { background: var(--green); }
         .pillar-bar-fill.good { background: #84CC16; }
         .pillar-bar-fill.fair { background: var(--yellow); }
         .pillar-bar-fill.poor { background: #F97316; }
         .pillar-bar-fill.critical { background: var(--red); }
+        .pillar-details { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .pillar-card.expanded .pillar-details { display: block; }
+        .pillar-detail-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
+        .pillar-detail-item:last-child { border-bottom: none; }
+        .pillar-detail-label { color: var(--text-muted); }
+        .pillar-detail-value { color: var(--text-secondary); font-weight: 500; }
 
-        .pillar-details {
-            display: none;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
-        }
-
-        .pillar-card.expanded .pillar-details {
-            display: block;
-        }
-
-        .pillar-detail-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .pillar-detail-item:last-child {
-            border-bottom: none;
-        }
-
-        .pillar-detail-label {
-            color: var(--text-muted);
-        }
-
-        .pillar-detail-value {
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        /* Strength/Weakness Grid */
-        .sw-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .sw-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-        }
-
-        .sw-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .sw-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-        }
-
+        .sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .sw-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .sw-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .sw-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; }
         .sw-icon.green { background: var(--green-dim); color: var(--green); }
         .sw-icon.red { background: var(--red-dim); color: var(--red); }
-
-        .sw-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .sw-list {
-            list-style: none;
-        }
-
-        .sw-list li {
-            font-size: 13px;
-            color: var(--text-secondary);
-            padding: 6px 0;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .sw-list li:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .sw-list li::before {
-            content: '';
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
+        .sw-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .sw-list { list-style: none; }
+        .sw-list li { font-size: 13px; color: var(--text-secondary); padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+        .sw-list li:last-child { border-bottom: none; padding-bottom: 0; }
+        .sw-list li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
         .sw-card.strength .sw-list li::before { background: var(--green); }
         .sw-card.weakness .sw-list li::before { background: var(--red); }
 
-        /* Recommendations */
-        .recs-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
+        .recs-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+        .recs-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .recs-icon { font-size: 18px; }
+        .recs-title { font-size: 13px; font-weight: 600; }
+        .rec-item { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
+        .rec-item:last-child { border-bottom: none; }
+        .rec-number { width: 22px; height: 22px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--text-muted); flex-shrink: 0; }
+        .rec-item.urgent .rec-number { background: var(--red-dim); color: var(--red); }
+        .rec-content { flex: 1; }
+        .rec-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+        .rec-item.urgent .rec-text { color: var(--text-primary); }
+        .rec-tag { display: inline-block; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 6px; border-radius: 3px; margin-top: 6px; }
+        .rec-tag.urgent { background: var(--red-dim); color: var(--red); }
+        .rec-tag.priority { background: var(--yellow-dim); color: var(--yellow); }
 
-        .recs-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        /* Qualitative Analysis Section */
+        .analysis-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+        .analysis-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .analysis-icon { font-size: 18px; }
+        .analysis-title { font-size: 13px; font-weight: 600; }
+        .analysis-content { padding: 16px 20px; }
 
-        .recs-icon {
-            font-size: 18px;
-        }
+        .global-comment-box { background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; }
+        .global-comment-text { font-size: 14px; color: var(--text-primary); line-height: 1.7; margin: 0; font-style: italic; }
 
-        .recs-title {
-            font-size: 13px;
-            font-weight: 600;
-        }
+        .prognosis-box { background: var(--blue-dim); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+        .prognosis-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--blue); margin-bottom: 6px; }
+        .prognosis-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0; }
 
-        .rec-item {
-            padding: 14px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-        }
+        .sentiment-box { background: var(--bg-tertiary); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+        .sentiment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .sentiment-label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+        .sentiment-badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        .sentiment-badge.positive { background: var(--green-dim); color: var(--green); }
+        .sentiment-badge.neutral { background: var(--yellow-dim); color: var(--yellow); }
+        .sentiment-badge.negative { background: var(--red-dim); color: var(--red); }
+        .sentiment-themes { display: flex; flex-wrap: wrap; gap: 6px; }
+        .sentiment-theme { font-size: 11px; padding: 4px 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 12px; color: var(--text-secondary); }
 
-        .rec-item:last-child {
-            border-bottom: none;
-        }
+        .channels-analysis { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .channel-box { background: var(--bg-tertiary); border-radius: 8px; padding: 12px 14px; }
+        .channel-name { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+        .channel-status { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+        .channel-urgency { font-size: 10px; font-weight: 500; text-transform: uppercase; }
+        .channel-urgency.high { color: var(--red); }
+        .channel-urgency.medium { color: var(--yellow); }
+        .channel-urgency.low { color: var(--green); }
+        .channel-areas { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .area-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+        .area-tag.strong { background: var(--green-dim); color: var(--green); }
+        .area-tag.weak { background: var(--red-dim); color: var(--red); }
 
-        .rec-number {
-            width: 22px;
-            height: 22px;
-            background: var(--bg-tertiary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-muted);
-            flex-shrink: 0;
-        }
+        .cta-section { text-align: center; padding: 32px 20px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; }
+        .cta-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+        .cta-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+        .cta-btn { display: inline-block; padding: 12px 28px; background: var(--text-primary); color: var(--bg-primary); border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: opacity 0.2s; }
+        .cta-btn:hover { opacity: 0.9; }
+        .new-btn { display: inline-block; margin-top: 12px; padding: 10px 20px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+        .new-btn:hover { color: var(--text-primary); border-color: var(--border-focus); }
 
-        .rec-item.urgent .rec-number {
-            background: var(--red-dim);
-            color: var(--red);
-        }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-primary); z-index: 200; justify-content: center; align-items: center; }
+        .loading-overlay.visible { display: flex; }
+        .loading-content { text-align: center; max-width: 300px; }
+        .loading-spinner { width: 48px; height: 48px; border: 2px solid var(--border); border-top-color: var(--text-primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 24px; }
+        .loading-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .loading-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+        .loading-steps { text-align: left; }
+        .loading-step { display: flex; align-items: center; gap: 12px; padding: 8px 0; font-size: 13px; color: var(--text-muted); }
+        .loading-step.active { color: var(--text-primary); }
+        .loading-step.done { color: var(--green); }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+        .loading-step.active .step-dot { background: var(--text-primary); animation: pulse 1s ease infinite; }
+        .loading-step.done .step-dot { background: var(--green); }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
 
-        .rec-content {
-            flex: 1;
-        }
-
-        .rec-text {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        .rec-item.urgent .rec-text {
-            color: var(--text-primary);
-        }
-
-        .rec-tag {
-            display: inline-block;
-            font-size: 9px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 2px 6px;
-            border-radius: 3px;
-            margin-top: 6px;
-        }
-
-        .rec-tag.urgent {
-            background: var(--red-dim);
-            color: var(--red);
-        }
-
-        .rec-tag.priority {
-            background: var(--yellow-dim);
-            color: var(--yellow);
-        }
-
-        /* CTA */
-        .cta-section {
-            text-align: center;
-            padding: 32px 20px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-        }
-
-        .cta-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .cta-subtitle {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 20px;
-        }
-
-        .cta-btn {
-            display: inline-block;
-            padding: 12px 28px;
-            background: var(--text-primary);
-            color: var(--bg-primary);
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: opacity 0.2s;
-        }
-
-        .cta-btn:hover {
-            opacity: 0.9;
-        }
-
-        .new-btn {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 10px 20px;
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 13px;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .new-btn:hover {
-            color: var(--text-primary);
-            border-color: var(--border-focus);
-        }
-
-        /* Loading */
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--bg-primary);
-            z-index: 200;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .loading-overlay.visible {
-            display: flex;
-        }
-
-        .loading-content {
-            text-align: center;
-            max-width: 300px;
-        }
-
-        .loading-spinner {
-            width: 48px;
-            height: 48px;
-            border: 2px solid var(--border);
-            border-top-color: var(--text-primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 24px;
-        }
-
-        .loading-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .loading-subtitle {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 24px;
-        }
-
-        .loading-steps {
-            text-align: left;
-        }
-
-        .loading-step {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 0;
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .loading-step.active {
-            color: var(--text-primary);
-        }
-
-        .loading-step.done {
-            color: var(--green);
-        }
-
-        .step-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--border);
-        }
-
-        .loading-step.active .step-dot {
-            background: var(--text-primary);
-            animation: pulse 1s ease infinite;
-        }
-
-        .loading-step.done .step-dot {
-            background: var(--green);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.3); }
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 11px;
-            color: var(--text-muted);
-        }
+        .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--text-muted); }
 
         @media (max-width: 540px) {
             .main { padding: 90px 16px 40px; }
@@ -862,7 +307,6 @@
         </section>
 
         <section class="results-section" id="resultsSection">
-            <!-- Score Hero -->
             <div class="score-hero">
                 <div class="score-label">Punteggio Digitale</div>
                 <div class="score-value" id="globalScore">--<span class="score-max">/100</span></div>
@@ -871,7 +315,6 @@
                 <div class="risk-badge low" id="riskBadge">Rischio Basso</div>
             </div>
 
-            <!-- Key Insight -->
             <div class="insight-card">
                 <div class="insight-header">
                     <span class="insight-icon">💡</span>
@@ -880,11 +323,9 @@
                 <p class="insight-text" id="keyInsight">--</p>
             </div>
 
-            <!-- Pillars -->
             <div class="section-title">Dettaglio per canale</div>
             <div class="pillars-grid" id="pillarsGrid"></div>
 
-            <!-- Strengths & Weaknesses -->
             <div class="sw-grid">
                 <div class="sw-card strength">
                     <div class="sw-header">
@@ -902,7 +343,6 @@
                 </div>
             </div>
 
-            <!-- Recommendations -->
             <div class="recs-card">
                 <div class="recs-header">
                     <span class="recs-icon">🎯</span>
@@ -911,7 +351,46 @@
                 <div id="recommendationsList"></div>
             </div>
 
-            <!-- CTA -->
+            <!-- Analisi Qualitativa Globale -->
+            <div class="analysis-card" id="qualitativeSection" style="display: none;">
+                <div class="analysis-header">
+                    <span class="analysis-icon">📊</span>
+                    <span class="analysis-title">Analisi Qualitativa</span>
+                </div>
+                <div class="analysis-content">
+                    <div class="global-comment-box" id="globalCommentBox">
+                        <p class="global-comment-text" id="globalCommentText">--</p>
+                    </div>
+                    <div class="prognosis-box" id="prognosisBox">
+                        <div class="prognosis-label">Prognosi</div>
+                        <p class="prognosis-text" id="prognosisText">--</p>
+                    </div>
+                    <div class="sentiment-box" id="sentimentBox">
+                        <div class="sentiment-header">
+                            <span class="sentiment-label">Sentiment Recensioni</span>
+                            <span class="sentiment-badge" id="sentimentBadge">--</span>
+                        </div>
+                        <div class="sentiment-themes" id="sentimentThemes"></div>
+                    </div>
+                    <div class="channels-analysis">
+                        <div class="channel-box" id="reputationAnalysis">
+                            <div class="channel-name">⭐ Reputazione</div>
+                            <div class="channel-status" id="reputationStatus">--</div>
+                            <div class="channel-urgency" id="reputationUrgency"></div>
+                        </div>
+                        <div class="channel-box" id="instagramAnalysis">
+                            <div class="channel-name">📱 Instagram</div>
+                            <div class="channel-status" id="instagramStatus">--</div>
+                            <div class="channel-areas" id="instagramAreas"></div>
+                        </div>
+                        <div class="channel-box" id="gmbAnalysis">
+                            <div class="channel-name">📍 Google Business</div>
+                            <div class="channel-areas" id="gmbAreas"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="cta-section">
                 <div class="cta-title">Vuoi migliorare questi numeri?</div>
                 <p class="cta-subtitle">Ti aiutiamo a ottimizzare la tua presenza digitale</p>
@@ -924,7 +403,6 @@
 
     <footer class="footer">Powered by SoloFood</footer>
 
-    <!-- Loading -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
             <div class="loading-spinner"></div>
@@ -941,9 +419,9 @@
     </div>
 
     <script>
-        // API URL - può essere sovrascritto tramite variabile globale window.DIGITAL_CHECKUP_API_URL
+        // API URL - configurabile
         const API_BASE_URL = window.DIGITAL_CHECKUP_API_URL || 'https://claude-code-chatbot-whatsapp-production-750b.up.railway.app';
-        
+
         // Sanitizzazione XSS
         function escapeHtml(text) {
             if (text === null || text === undefined) return '';
@@ -961,7 +439,7 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const website = document.getElementById('website').value.trim();
             const instagram = document.getElementById('instagram').value.trim().replace('@', '');
             const gmbLink = document.getElementById('gmbLink').value.trim();
@@ -982,7 +460,8 @@
             submitBtn.disabled = true;
             loadingOverlay.classList.add('visible');
 
-            await runLoadingSteps(website, instagram, gmbLink);
+            // Avvia animazione loading (non bloccante)
+            runLoadingSteps(website, instagram, gmbLink);
 
             try {
                 const result = await performAnalysis({
@@ -990,10 +469,6 @@
                     instagramUsername: instagram || null,
                     websiteUrl: website || null
                 });
-
-                if (!result.success && result.error) {
-                    throw new Error(result.error.message || 'Errore nell\'analisi');
-                }
 
                 loadingOverlay.classList.remove('visible');
                 formSection.style.display = 'none';
@@ -1048,10 +523,10 @@
             for (let i = 0; i < steps.length; i++) {
                 const step = document.getElementById(steps[i]);
                 step.classList.add('active');
-                const delay = steps[i].includes('website') ? 5000 :
-                              steps[i].includes('instagram') ? 6000 :
-                              steps[i].includes('reviews') ? 4000 :
-                              steps[i].includes('gmb') ? 3000 : 2000;
+                const delay = steps[i].includes('website') ? 8000 :
+                              steps[i].includes('instagram') ? 10000 :
+                              steps[i].includes('reviews') ? 8000 :
+                              steps[i].includes('gmb') ? 5000 : 3000;
                 await new Promise(r => setTimeout(r, delay));
                 step.classList.remove('active');
                 step.classList.add('done');
@@ -1066,7 +541,7 @@
                     businessName: params.businessName,
                     instagramUsername: params.instagramUsername,
                     websiteUrl: params.websiteUrl,
-                    verbose: true  // Get detailed feedback
+                    verbose: true
                 })
             });
             if (!response.ok) {
@@ -1077,7 +552,10 @@
         }
 
         function displayResults(result, displayName) {
-            // Handle MCP-style response: { content: [{ type: "text", text: "JSON" }] }
+            // Debug: log raw response
+            console.log('Raw API response:', result);
+
+            // Parse MCP-style response: { content: [{ type: "text", text: "JSON" }] }
             let parsed = result;
             if (result.content && Array.isArray(result.content) && result.content[0]?.text) {
                 try {
@@ -1087,24 +565,29 @@
                 }
             }
 
-            const data = parsed.data || parsed;
-            // globalScore can be a number or an object
-            const globalScoreValue = typeof data.globalScore === 'number' ? data.globalScore : (data.globalScore?.finalScore || 0);
-            const summary = data.summary || {};
-            const breakdown = data.breakdown || {};
+            // Debug: log parsed data
+            console.log('Parsed data:', parsed);
 
-            // Score
-            const score = globalScoreValue;
+            // Extract main fields from API response
+            // API returns: { toolName, success, score, scoreLabel, riskLevel, summary, data }
+            const globalScore = parsed.score || 0;
+            const scoreLabel = parsed.scoreLabel || 'Analisi completata';
+            const riskLevel = parsed.riskLevel || 'LOW';
+            const summary = parsed.summary || {};
+            const data = parsed.data || {};
+            const business = data.business || {};
+            const pillars = data.pillars || {};
+
+            // Global Score
             const scoreEl = document.getElementById('globalScore');
-            scoreEl.innerHTML = `${score}<span class="score-max">/100</span>`;
-            scoreEl.className = 'score-value ' + getScoreClass(score);
+            scoreEl.innerHTML = `${globalScore}<span class="score-max">/100</span>`;
+            scoreEl.className = 'score-value ' + getScoreClass(globalScore);
 
             // Status
-            document.getElementById('globalStatus').textContent = summary.status || 'Analisi completata';
-            document.getElementById('businessNameDisplay').textContent = displayName;
+            document.getElementById('globalStatus').textContent = summary.status || scoreLabel;
+            document.getElementById('businessNameDisplay').textContent = business.name || displayName;
 
             // Risk badge
-            const riskLevel = summary.riskLevel || data.riskLevel || 'LOW';
             const riskBadge = document.getElementById('riskBadge');
             riskBadge.className = 'risk-badge ' + riskLevel.toLowerCase();
             riskBadge.textContent = { LOW: '✓ Rischio Basso', MEDIUM: '⚠ Rischio Medio', HIGH: '⚠ Rischio Alto' }[riskLevel] || 'Rischio Basso';
@@ -1117,38 +600,35 @@
             pillarsGrid.innerHTML = '';
 
             const pillarConfig = [
-                { key: 'website', name: 'Sito Web', emoji: '🌐', dataKey: 'website' },
-                { key: 'instagram', name: 'Instagram', emoji: '📱', dataKey: 'instagram' },
-                { key: 'google_business', name: 'Google Business', emoji: '📍', dataKey: 'googleBusiness' },
-                { key: 'reputation', name: 'Recensioni', emoji: '⭐', dataKey: 'reputation' }
+                { key: 'website', name: 'Sito Web', emoji: '🌐' },
+                { key: 'instagram', name: 'Instagram', emoji: '📱' },
+                { key: 'googleBusiness', name: 'Google Business', emoji: '📍' },
+                { key: 'reputation', name: 'Recensioni', emoji: '⭐' }
             ];
 
-            pillarConfig.forEach(({ key, name, emoji, dataKey }) => {
-                const pillar = breakdown[key] || {};
-                // Get pillar data from data.pillars[dataKey].data or fallback
-                const pillarsObj = data.pillars || {};
-                const pillarInfo = pillarsObj[dataKey] || {};
-                const pillarData = pillarInfo.data || data[dataKey] || {};
-                const score = pillar.score ?? pillarInfo.score;
-                const available = pillar.available ?? (pillarInfo.status === 'success');
-                const weight = pillar.adjustedWeight || pillar.weight || 0;
-                const scoreClass = getScoreClass(score);
+            pillarConfig.forEach(({ key, name, emoji }) => {
+                const pillarInfo = pillars[key] || {};
+                const pillarData = pillarInfo.data || {};
+                const pillarScore = pillarInfo.score;
+                const pillarWeight = pillarInfo.weight || 0;
+                const available = pillarInfo.status === 'success' && pillarScore !== undefined;
+                const scoreClass = getScoreClass(pillarScore);
 
                 const card = document.createElement('div');
                 card.className = `pillar-card ${!available ? 'unavailable' : ''}`;
-                
+
                 let detailsHtml = '';
-                if (available && pillarData) {
-                    detailsHtml = buildPillarDetails(key, pillarData);
+                if (available) {
+                    detailsHtml = buildPillarDetails(key, pillarData, pillarInfo);
                 }
 
                 card.innerHTML = `
                     <div class="pillar-header">
-                        <span class="pillar-name"><span class="pillar-emoji">${emoji}</span> ${name}</span>
-                        <span class="pillar-weight">${available ? Math.round(weight) + '%' : '—'}</span>
+                        <span class="pillar-name"><span class="pillar-emoji">${emoji}</span> ${escapeHtml(name)}</span>
+                        <span class="pillar-weight">${available ? Math.round(pillarWeight) + '%' : '—'}</span>
                     </div>
-                    <div class="pillar-score ${scoreClass}">${available ? score : 'N/A'}</div>
-                    <div class="pillar-bar"><div class="pillar-bar-fill ${scoreClass}" style="width:${available ? score : 0}%"></div></div>
+                    <div class="pillar-score ${scoreClass}">${available ? pillarScore : 'N/A'}</div>
+                    <div class="pillar-bar"><div class="pillar-bar-fill ${scoreClass}" style="width:${available ? pillarScore : 0}%"></div></div>
                     ${detailsHtml ? `<div class="pillar-details">${detailsHtml}</div>` : ''}
                 `;
 
@@ -1162,27 +642,44 @@
             });
 
             // Strengths
-            const strengths = summary.strongAreas || [];
-            document.getElementById('strengthsList').innerHTML = 
-                strengths.length > 0 
+            const strengths = summary.strengths || [];
+            document.getElementById('strengthsList').innerHTML =
+                strengths.length > 0
                     ? strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')
                     : '<li>Analizza più canali per identificare i punti di forza</li>';
 
             // Weaknesses
-            const weaknesses = summary.criticalAreas || [];
-            document.getElementById('weaknessesList').innerHTML = 
-                weaknesses.length > 0 
+            const weaknesses = summary.weaknesses || [];
+            document.getElementById('weaknessesList').innerHTML =
+                weaknesses.length > 0
                     ? weaknesses.map(w => `<li>${escapeHtml(w)}</li>`).join('')
                     : '<li>Nessuna area critica identificata</li>';
 
-            // Recommendations
-            const recs = summary.recommendations || [];
-            document.getElementById('recommendationsList').innerHTML = 
-                recs.length > 0 
-                    ? recs.map((rec, i) => {
+            // Recommendations - collect from multiple sources
+            let recs = summary.recommendations || [];
+
+            // If empty, try to get from pillar-level recommendations
+            if (recs.length === 0) {
+                // Try reputation
+                if (pillars.reputation?.data?.scoreSummary?.recommendations) {
+                    recs = recs.concat(pillars.reputation.data.scoreSummary.recommendations);
+                }
+                // Try googleBusiness
+                if (pillars.googleBusiness?.data?.completeness?.recommendations) {
+                    recs = recs.concat(pillars.googleBusiness.data.completeness.recommendations);
+                }
+                // Try instagram
+                if (pillars.instagram?.data?.executiveSummary?.recommendations) {
+                    recs = recs.concat(pillars.instagram.data.executiveSummary.recommendations);
+                }
+            }
+
+            document.getElementById('recommendationsList').innerHTML =
+                recs.length > 0
+                    ? recs.slice(0, 5).map((rec, i) => {
                         const text = typeof rec === 'string' ? rec : rec.text || rec;
-                        const isUrgent = text.includes('[URGENTE]') || text.includes('URGENTE');
-                        const cleanText = text.replace('[URGENTE]', '').replace('[PRIORITY]', '').trim();
+                        const isUrgent = text.includes('[URGENTE]') || text.includes('URGENTE') || text.includes('IMPORTANTE');
+                        const cleanText = text.replace('[URGENTE]', '').replace('[PRIORITY]', '').replace('IMPORTANTE:', '').trim();
                         return `
                             <div class="rec-item ${isUrgent ? 'urgent' : ''}">
                                 <div class="rec-number">${i + 1}</div>
@@ -1195,53 +692,229 @@
                     }).join('')
                     : '<div class="rec-item"><div class="rec-number">—</div><div class="rec-text">Completa l\'analisi per ricevere raccomandazioni personalizzate</div></div>';
 
+            // Qualitative Analysis Section
+            displayQualitativeAnalysis(pillars);
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function buildPillarDetails(key, data) {
+        function displayQualitativeAnalysis(pillars) {
+            const section = document.getElementById('qualitativeSection');
+            let hasContent = false;
+
+            // Reputation Executive Summary
+            const repData = pillars.reputation?.data || {};
+            const repExec = repData.executiveSummary || {};
+            const sentiment = repData.sentimentAnalysis || {};
+
+            // Global Comment (key_insight from reputation)
+            if (repExec.key_insight) {
+                document.getElementById('globalCommentText').textContent = repExec.key_insight;
+                document.getElementById('globalCommentBox').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('globalCommentBox').style.display = 'none';
+            }
+
+            // Prognosis
+            if (repExec.prognosis) {
+                document.getElementById('prognosisText').textContent = repExec.prognosis;
+                document.getElementById('prognosisBox').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('prognosisBox').style.display = 'none';
+            }
+
+            // Sentiment Analysis
+            if (sentiment.sentiment_score !== undefined || sentiment.overall_tone) {
+                const sentimentBadge = document.getElementById('sentimentBadge');
+                const tone = sentiment.overall_tone || '';
+                const score = sentiment.sentiment_score;
+
+                let badgeClass = 'neutral';
+                let badgeText = 'Neutro';
+                if (tone.includes('POSITIVO') || score >= 70) {
+                    badgeClass = 'positive';
+                    badgeText = score ? `${score}% Positivo` : 'Molto Positivo';
+                } else if (tone.includes('NEGATIVO') || score < 40) {
+                    badgeClass = 'negative';
+                    badgeText = score ? `${score}% Negativo` : 'Negativo';
+                } else {
+                    badgeText = score ? `${score}%` : 'Neutro';
+                }
+
+                sentimentBadge.className = 'sentiment-badge ' + badgeClass;
+                sentimentBadge.textContent = badgeText;
+
+                // Themes
+                const themes = sentiment.positive_themes || [];
+                document.getElementById('sentimentThemes').innerHTML = themes.slice(0, 4).map(t =>
+                    `<span class="sentiment-theme">${escapeHtml(t.theme)}</span>`
+                ).join('');
+
+                document.getElementById('sentimentBox').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('sentimentBox').style.display = 'none';
+            }
+
+            // Reputation Channel Analysis
+            if (repExec.status) {
+                document.getElementById('reputationStatus').textContent = repExec.status;
+                const urgency = repExec.urgency_level || '';
+                const urgencyEl = document.getElementById('reputationUrgency');
+                if (urgency) {
+                    urgencyEl.textContent = `Urgenza: ${urgency}`;
+                    urgencyEl.className = 'channel-urgency ' + urgency.toLowerCase();
+                }
+                document.getElementById('reputationAnalysis').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('reputationAnalysis').style.display = 'none';
+            }
+
+            // Instagram Channel Analysis
+            const igExec = pillars.instagram?.data?.executiveSummary || {};
+            if (igExec.status || igExec.strongAreas?.length || igExec.weakAreas?.length) {
+                if (igExec.status) {
+                    document.getElementById('instagramStatus').textContent = igExec.status;
+                }
+                const areasHtml = [
+                    ...(igExec.strongAreas || []).slice(0, 3).map(a => `<span class="area-tag strong">${escapeHtml(a)}</span>`),
+                    ...(igExec.weakAreas || []).slice(0, 2).map(a => `<span class="area-tag weak">${escapeHtml(a)}</span>`)
+                ].join('');
+                document.getElementById('instagramAreas').innerHTML = areasHtml;
+                document.getElementById('instagramAnalysis').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('instagramAnalysis').style.display = 'none';
+            }
+
+            // GMB Channel Analysis
+            const gmbComp = pillars.googleBusiness?.data?.completeness || {};
+            if (gmbComp.strongAreas?.length || gmbComp.weakAreas?.length) {
+                const areasHtml = [
+                    ...(gmbComp.strongAreas || []).slice(0, 3).map(a => `<span class="area-tag strong">${escapeHtml(a)}</span>`),
+                    ...(gmbComp.weakAreas || []).slice(0, 2).map(a => `<span class="area-tag weak">${escapeHtml(a)}</span>`)
+                ].join('');
+                document.getElementById('gmbAreas').innerHTML = areasHtml;
+                document.getElementById('gmbAnalysis').style.display = 'block';
+                hasContent = true;
+            } else {
+                document.getElementById('gmbAnalysis').style.display = 'none';
+            }
+
+            // Show section only if there's content
+            section.style.display = hasContent ? 'block' : 'none';
+        }
+
+        function buildPillarDetails(key, data, pillarInfo) {
             let html = '';
-            
-            if (key === 'reputation' && data.score) {
-                const s = data.score;
+
+            // REPUTATION
+            // API structure: data.business (rating, totalReviews), data.metadata (responseRate), data.trendAnalysis (overall_direction)
+            if (key === 'reputation') {
+                const business = data.business || {};
+                const metadata = data.metadata || {};
+                const trend = data.trendAnalysis || {};
+
+                const rating = business.rating;
+                const totalReviews = business.totalReviews;
+                const responseRate = metadata.responseRate;
+                const trendDirection = trend.overall_direction;
+
                 html += `
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Rating medio</span><span class="pillar-detail-value">${data.averageRating?.toFixed(1) || 'N/A'} ⭐</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Totale recensioni</span><span class="pillar-detail-value">${data.totalReviews || 'N/A'}</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Response rate</span><span class="pillar-detail-value">${data.responseRate ? data.responseRate + '%' : 'N/A'}</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Trend</span><span class="pillar-detail-value">${data.trendAnalysis?.overall_direction || 'N/A'}</span></div>
-                `;
-            }
-            
-            if (key === 'instagram' && data.score) {
-                const s = data.score;
-                html += `
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Follower</span><span class="pillar-detail-value">${data.profile?.followers?.toLocaleString() || 'N/A'}</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Engagement</span><span class="pillar-detail-value">${s.breakdown?.engagement?.score || 'N/A'}/100</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Visual Identity</span><span class="pillar-detail-value">${s.breakdown?.visualIdentity?.score || 'N/A'}/100</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Copywriting</span><span class="pillar-detail-value">${s.breakdown?.copywriting?.score || 'N/A'}/100</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Rating medio</span><span class="pillar-detail-value">${rating !== undefined ? rating.toFixed(1) + ' ⭐' : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Totale recensioni</span><span class="pillar-detail-value">${totalReviews !== undefined ? totalReviews.toLocaleString() : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Response rate</span><span class="pillar-detail-value">${responseRate !== undefined ? responseRate + '%' : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Trend</span><span class="pillar-detail-value">${formatTrend(trendDirection)}</span></div>
                 `;
             }
 
-            if (key === 'website' && data.score) {
-                const s = data.score;
+            // INSTAGRAM
+            // API structure: data.profile (followers), data.metrics (engagementRate), data.aiAnalysis (visualIdentity.score, copywriting.score)
+            if (key === 'instagram') {
+                const profile = data.profile || {};
+                const metrics = data.metrics || {};
+                const aiAnalysis = data.aiAnalysis || {};
+
+                const followers = profile.followers;
+                const engagementRate = metrics.engagementRate;
+                const visualIdentityScore = aiAnalysis.visualIdentity?.score;
+                const copywritingScore = aiAnalysis.copywriting?.score;
+
                 html += `
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Menu Quality</span><span class="pillar-detail-value">${s.breakdown?.menuQuality?.score || 'N/A'}/100</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">UX</span><span class="pillar-detail-value">${s.breakdown?.userExperience?.score || 'N/A'}/100</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">SEO</span><span class="pillar-detail-value">${s.breakdown?.seo?.score || 'N/A'}/100</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">CMS</span><span class="pillar-detail-value">${data.technical?.cms?.detected || 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Follower</span><span class="pillar-detail-value">${followers !== undefined ? followers.toLocaleString() : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Engagement Rate</span><span class="pillar-detail-value">${engagementRate !== undefined ? engagementRate.toFixed(2) + '%' : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Visual Identity</span><span class="pillar-detail-value">${visualIdentityScore !== undefined ? visualIdentityScore + '/100' : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Copywriting</span><span class="pillar-detail-value">${copywritingScore !== undefined ? copywritingScore + '/100' : 'N/A'}</span></div>
                 `;
             }
 
-            if (key === 'google_business' && data.completeness) {
-                const c = data.completeness;
+            // WEBSITE
+            // API might not return detailed breakdown, show what's available
+            if (key === 'website') {
+                const score = data.score || {};
+                const breakdown = score.breakdown || {};
+                const technical = data.technical || {};
+
+                // Check if we have detailed breakdown data
+                const hasBreakdown = Object.keys(breakdown).length > 0;
+
+                if (hasBreakdown) {
+                    const menuQuality = breakdown.menuQuality?.score ?? breakdown.menu_quality?.score;
+                    const ux = breakdown.userExperience?.score ?? breakdown.user_experience?.score;
+                    const seo = breakdown.seo?.score;
+                    const cms = technical.cms?.detected || technical.cms;
+
+                    html += `
+                        <div class="pillar-detail-item"><span class="pillar-detail-label">Menu Quality</span><span class="pillar-detail-value">${menuQuality !== undefined ? menuQuality + '/100' : 'N/A'}</span></div>
+                        <div class="pillar-detail-item"><span class="pillar-detail-label">UX</span><span class="pillar-detail-value">${ux !== undefined ? ux + '/100' : 'N/A'}</span></div>
+                        <div class="pillar-detail-item"><span class="pillar-detail-label">SEO</span><span class="pillar-detail-value">${seo !== undefined ? seo + '/100' : 'N/A'}</span></div>
+                        <div class="pillar-detail-item"><span class="pillar-detail-label">CMS</span><span class="pillar-detail-value">${cms || 'N/A'}</span></div>
+                    `;
+                } else {
+                    // Fallback: show basic info
+                    html += `
+                        <div class="pillar-detail-item"><span class="pillar-detail-label">Punteggio</span><span class="pillar-detail-value">${pillarInfo.score}/100</span></div>
+                        <div class="pillar-detail-item"><span class="pillar-detail-label">Peso</span><span class="pillar-detail-value">${pillarInfo.weight}%</span></div>
+                        <div class="pillar-detail-item"><span class="pillar-detail-label">Stato</span><span class="pillar-detail-value">Analisi completata ✓</span></div>
+                    `;
+                }
+            }
+
+            // GOOGLE BUSINESS
+            // API structure: data.completeness (finalScore, breakdown), data.metadata (photoCount, hasWebsite, hasPhone)
+            if (key === 'googleBusiness') {
+                const completeness = data.completeness || {};
+                const breakdown = completeness.breakdown || {};
+                const metadata = data.metadata || {};
+
+                const finalScore = completeness.finalScore ?? pillarInfo.score;
+                const photoCount = metadata.photoCount ?? breakdown.photos?.details?.photoCount ?? 0;
+                const hasHours = breakdown.hours?.details?.hasHours;
+                const hasWebsite = metadata.hasWebsite ?? breakdown.basicInfo?.details?.checks?.hasWebsite;
+
                 html += `
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Completezza</span><span class="pillar-detail-value">${c.finalScore}/100</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Foto</span><span class="pillar-detail-value">${c.breakdown?.photos?.value || 0}</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Orari</span><span class="pillar-detail-value">${c.breakdown?.hours?.present ? '✓' : '✗'}</span></div>
-                    <div class="pillar-detail-item"><span class="pillar-detail-label">Sito web</span><span class="pillar-detail-value">${c.breakdown?.website?.present ? '✓' : '✗'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Completezza</span><span class="pillar-detail-value">${finalScore !== undefined ? finalScore + '/100' : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Foto</span><span class="pillar-detail-value">${photoCount}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Orari</span><span class="pillar-detail-value">${hasHours === true ? '✓' : hasHours === false ? '✗' : 'N/A'}</span></div>
+                    <div class="pillar-detail-item"><span class="pillar-detail-label">Sito web</span><span class="pillar-detail-value">${hasWebsite === true ? '✓' : hasWebsite === false ? '✗' : 'N/A'}</span></div>
                 `;
             }
 
             return html;
+        }
+
+        function formatTrend(trend) {
+            if (!trend) return 'N/A';
+            const trendMap = {
+                'IMPROVING': '📈 In miglioramento',
+                'STABLE': '➡️ Stabile',
+                'DECLINING': '📉 In calo',
+                'VOLATILE': '📊 Variabile'
+            };
+            return trendMap[trend] || trend;
         }
 
         function getScoreClass(score) {
